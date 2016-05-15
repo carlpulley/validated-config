@@ -5,7 +5,11 @@ import sbt.Keys._
 
 name := "validated-config"
 
+enablePlugins(SiteScaladocPlugin)
+
 CommonProject.settings
+
+ghpages.settings
 
 resolvers += Resolver.jcenterRepo
 
@@ -16,6 +20,8 @@ libraryDependencies ++= Seq(
   shapeless,
   typesafeConfig
 )
+
+git.remoteRepo := s"git@github.com:carlpulley/${name.value}.git"
 
 publishMavenStyle := true
 

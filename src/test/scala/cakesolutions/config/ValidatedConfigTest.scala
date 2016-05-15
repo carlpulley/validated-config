@@ -22,6 +22,7 @@ object ValidatedConfigTest {
 class ValidatedConfigTest extends FreeSpec {
   "parameter checking" - {
     val fakeException = new RuntimeException("fake exception")
+
     implicit val config = ConfigFactory.parseString(
       """
         |top-level-name = "test"
