@@ -2,6 +2,7 @@
 
 package cakesolutions.config
 
+import cakesolutions.config.ValidatedConfigTest._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 
@@ -19,9 +20,8 @@ object ValidatedConfigTest {
 }
 
 class ValidatedConfigTest extends FreeSpec {
-  import ValidatedConfigTest._
-
   "parameter checking" - {
+    val fakeException = new RuntimeException("fake exception")
     implicit val config = ConfigFactory.parseString(
       """
         |top-level-name = "test"
@@ -67,6 +67,12 @@ class ValidatedConfigTest extends FreeSpec {
       }
       validate[Int]("top-level-name", GenericTestFailure)(_ => true) match {
         case -\/(ValueFailure("top-level-name", InvalidValueType(_))) =>
+          assert(true)
+        case result =>
+          assert(false, result)
+      }
+      validate[String]("top-level-name", GenericTestFailure)(_ => throw fakeException) match {
+        case -\/(ValueFailure("top-level-name", InvalidValueType(fakeException))) =>
           assert(true)
         case result =>
           assert(false, result)
@@ -293,5 +299,4 @@ class ValidatedConfigTest extends FreeSpec {
       }
     }
   }
-
 }

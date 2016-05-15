@@ -127,8 +127,10 @@ package object config extends FicusInstances with ToValidationOps {
         }
       case Success(false) =>
         -\/(ValueFailure(path, NullValue))
+      // $COVERAGE-OFF$Requires `hasPath` to throw
       case Failure(_) =>
         -\/(ValueFailure(path, MissingValue))
+      // $COVERAGE-ON$
     }
   }
 
@@ -168,8 +170,10 @@ package object config extends FicusInstances with ToValidationOps {
         }
       case Success(false) =>
         -\/(ValueFailure(path, NullValue))
+      // $COVERAGE-OFF$Requires `hasPath` to throw
       case Failure(_) =>
         -\/(ValueFailure(path, MissingValue))
+      // $COVERAGE-ON$
     }
   }
 
