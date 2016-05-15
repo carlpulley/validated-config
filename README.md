@@ -74,6 +74,11 @@ constructs the case class specified in its type constraint. To do this,
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
 
+## Parsing Custom Configuration Values
+
+As both `unchecked` and `validate` use [Ficus](https://github.com/iheartradio/ficus) [ValueReader](https://github.com/iheartradio/ficus/blob/master/src/main/scala/net/ceedubs/ficus/readers/ValueReader.scala)'s to parse
+and type check configuration values, we only need to define a [custom extractor](https://github.com/iheartradio/ficus#custom-extraction).
+
 ## Example
 
 Given the following Scala case classes:
