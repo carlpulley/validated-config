@@ -19,7 +19,6 @@ object ValidatedConfigTest {
 }
 
 class ValidatedConfigTest extends FreeSpec {
-
   import ValidatedConfigTest._
 
   "parameter checking" - {
@@ -208,40 +207,90 @@ class ValidatedConfigTest extends FreeSpec {
     }
   }
 
-  "Ensure config files may be correctly parsed and validated with environment variable overrides" in {
-    val envMapping = ConfigFactory.parseString(
-      """
-        |env {
-        |  AKKA_HOST = docker-local
-        |  AKKA_PORT = 2552
-        |  AKKA_BIND_HOST = google.co.uk
-        |  AKKA_BIND_PORT = 123
-        |
-        |  HTTP_ADDR = 192.168.99.100
-        |  HTTP_PORT = 5678
-        |}
-      """.stripMargin
-    )
-    implicit val config = ConfigFactory.parseResourcesAnySyntax("application.conf").withFallback(envMapping).resolve()
-
-    val validatedConfig =
-      build[Settings](
-        validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-        validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
-        via("http") { implicit config =>
-          build[HttpConfig](
-            unchecked[String]("host"),
-            validate[Int]("port", ShouldBePositive)(_ > 0)
+  "Ensure config files may be correctly parsed and validated" - {
+    "invalid files fail to load" in {
+      val validatedConfig =
+        validateConfig("non-existent.conf") { implicit config =>
+          build[Settings](
+            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+            via("http") { implicit config =>
+              build[HttpConfig](
+                unchecked[String]("host"),
+                validate[Int]("port", ShouldBePositive)(_ > 0)
+              )
+            }
           )
         }
-      )
 
-    assert(validatedConfig.isRight)
-    validatedConfig match {
-      case \/-(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
-        assert(timeout == 30.seconds)
-      case result =>
-        assert(false, result)
+      validatedConfig match {
+        case -\/(ConfigError(FileNotFound("non-existent.conf", _))) =>
+          assert(true)
+        case result =>
+          assert(false, result)
+      }
+    }
+
+    "with environment variable overrides" in {
+      val envMapping = ConfigFactory.parseString(
+        """
+          |env {
+          |  AKKA_HOST = docker-local
+          |  AKKA_PORT = 2552
+          |  AKKA_BIND_HOST = google.co.uk
+          |  AKKA_BIND_PORT = 123
+          |
+          |  HTTP_ADDR = 192.168.99.100
+          |  HTTP_PORT = 5678
+          |}
+        """.
+          stripMargin
+      )
+      implicit val config = ConfigFactory.parseResourcesAnySyntax("application.conf").withFallback(envMapping).resolve()
+
+      val validatedConfig =
+        build[Settings](
+          validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+          validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+          via("http") { implicit config =>
+            build[HttpConfig](
+              unchecked[String]("host"),
+              validate[Int]("port", ShouldBePositive)(_ > 0)
+            )
+          }
+        )
+
+      assert(validatedConfig.isRight)
+      validatedConfig match {
+        case \/-(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
+          assert(timeout == 30.seconds)
+        case result =>
+          assert(false, result)
+      }
+    }
+
+    "using system environment variable overrides" in {
+      val validatedConfig =
+        validateConfig("application.conf") { implicit config =>
+          build[Settings](
+            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+            via("http") { implicit config =>
+              build[HttpConfig](
+                unchecked[String]("host"),
+                validate[Int]("port", ShouldBePositive)(_ > 0)
+              )
+            }
+          )
+        }
+
+      assert(validatedConfig.isRight)
+      validatedConfig match {
+        case \/-(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
+          assert(timeout == 30.seconds)
+        case result =>
+          assert(false, result)
+      }
     }
   }
 

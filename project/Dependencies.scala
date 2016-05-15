@@ -1,5 +1,6 @@
+// Copyright 2016 Carl Pulley
+
 import sbt._
-import Keys._
 
 object Dependencies {
   val ficus = "com.iheart" %% "ficus" % "1.2.5"

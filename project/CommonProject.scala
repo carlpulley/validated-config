@@ -1,5 +1,7 @@
+// Copyright 2016 Carl Pulley
+
+import sbt.Keys._
 import sbt._
-import Keys._
 
 /**
  * Common project settings
