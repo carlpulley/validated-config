@@ -4,6 +4,8 @@ When building reactive applications, it is important to fail early and
 to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library.
 
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=develop)](http://travis-ci.org/carlpulley/validated-config)
+
 ## Setup and Usage
 
 To use this library, add the following dependency to your `build.sbt`
