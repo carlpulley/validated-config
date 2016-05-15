@@ -2,7 +2,8 @@ language: scala
 sudo: false
 
 scala:
-   - 2.11.8
+  - 2.10.6
+  - 2.11.8
 
 jdk:
   - oraclejdk8
@@ -15,11 +16,7 @@ cache:
 install: /bin/true
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION -jvm-opts travis-jvmopts clean coverage test doc
+  - sbt ++$TRAVIS_SCALA_VERSION clean coverage test doc
   - sbt coverageReport
+  - sbt coverageAggregate
   - sbt codacyCoverage
-
-# Hack to ensure correct SBT is used
-before_script:
-  - mkdir -p $HOME/.sbt/launchers/0.13.10/
-  - curl -L -o $HOME/.sbt/launchers/0.13.10/sbt-launch.jar https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.10/sbt-launch.jar
