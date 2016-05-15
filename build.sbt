@@ -7,6 +7,8 @@ name := "validated-config"
 
 CommonProject.settings
 
+resolvers += Resolver.jcenterRepo
+
 libraryDependencies ++= Seq(
   ficus,
   scalatest,
