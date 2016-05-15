@@ -18,3 +18,8 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION -jvm-opts travis-jvmopts clean coverage test doc
   - sbt coverageReport
   - sbt codacyCoverage
+
+# Hack to ensure correct SBT is used
+before_script:
+  - mkdir -p $HOME/.sbt/launchers/0.13.10/
+  - curl -L -o $HOME/.sbt/launchers/0.13.10/sbt-launch.jar https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.10/sbt-launch.jar
