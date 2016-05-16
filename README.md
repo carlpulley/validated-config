@@ -6,7 +6,7 @@ to avoid throwing exceptions. Here, we apply these principles to the
 
 [![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=feature/documentation-and-publish)](http://travis-ci.org/carlpulley/validated-config)
 [![License](http://img.shields.io/badge/license-GPLv3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
-[![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api)
+[![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
 

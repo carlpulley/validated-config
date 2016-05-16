@@ -12,4 +12,3 @@ script:
   - sbt coverageReport
   - sbt coverageAggregate
   - sbt codacyCoverage
-  - sbt ghpagesPushSite
