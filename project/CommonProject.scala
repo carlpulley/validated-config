@@ -7,7 +7,7 @@ import sbt._
  * Common project settings
  */
 object CommonProject {
-  
+
   val settings =
     Seq(
       organization := "cakesolutions.net",
@@ -34,6 +34,6 @@ object CommonProject {
       fork := true,
       fork in test := true,
       sbtPlugin := false
-    ) 
+    )
 
 }
