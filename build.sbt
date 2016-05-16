@@ -5,8 +5,6 @@ import sbt.Keys._
 
 name := "validated-config"
 
-enablePlugins(SiteScaladocPlugin)
-
 CommonProject.settings
 
 ghpages.settings
@@ -21,7 +19,9 @@ libraryDependencies ++= Seq(
   typesafeConfig
 )
 
-git.remoteRepo := s"git@github.com:carlpulley/${name.value}.git"
+git.remoteRepo := s"https://github.com/carlpulley/${name.value}.git"
+
+site.includeScaladoc()
 
 publishMavenStyle := true
 
