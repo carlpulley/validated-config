@@ -10,7 +10,7 @@ object CommonProject {
 
   val settings =
     Seq(
-      organization := "cakesolutions.net",
+      organization := "net.cakesolutions",
       scalaVersion := "2.11.8",
       scalacOptions in Compile ++= Seq(
         "-encoding", "UTF-8",

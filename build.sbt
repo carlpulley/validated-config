@@ -44,8 +44,8 @@ pomExtra := (
   <url>https://github.com/carlpulley/validated-config</url>
     <licenses>
       <license>
-        <name>GNU General Public License, Version 3</name>
-        <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+        <name>Apache License 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         <distribution>repo</distribution>
       </license>
     </licenses>
