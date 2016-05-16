@@ -1,14 +1,16 @@
+// Copyright 2016 Carl Pulley
+
+import sbt.Keys._
 import sbt._
-import Keys._
 
 /**
  * Common project settings
  */
 object CommonProject {
-  
+
   val settings =
     Seq(
-      organization := "cakesolutions.net",
+      organization := "net.cakesolutions",
       scalaVersion := "2.11.8",
       scalacOptions in Compile ++= Seq(
         "-encoding", "UTF-8",
@@ -32,6 +34,6 @@ object CommonProject {
       fork := true,
       fork in test := true,
       sbtPlugin := false
-    ) 
+    )
 
 }

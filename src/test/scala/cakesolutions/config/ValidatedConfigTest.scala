@@ -2,6 +2,7 @@
 
 package cakesolutions.config
 
+import cakesolutions.config.ValidatedConfigTest._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 
@@ -19,10 +20,13 @@ object ValidatedConfigTest {
 }
 
 class ValidatedConfigTest extends FreeSpec {
-
-  import ValidatedConfigTest._
+  private def matchOrFail[Value](value: => Value)(matcher: PartialFunction[Value, Unit]): Unit = {
+    (matcher orElse[Value, Unit] { case result: Value => assert(false, result) })(value)
+  }
 
   "parameter checking" - {
+    val fakeException = new RuntimeException("fake exception")
+
     implicit val config = ConfigFactory.parseString(
       """
         |top-level-name = "test"
@@ -54,23 +58,21 @@ class ValidatedConfigTest extends FreeSpec {
       assert(validate[List[String]]("test.context.valueDoubleList", GenericTestFailure)(_ => true) == \/-(List("10.2", "20", "0.123")))
 
       assert(validate[String]("top-level-name", GenericTestFailure)(_ => false) == -\/(ValueFailure("top-level-name", GenericTestFailure)))
-      validate[String]("invalid-path", GenericTestFailure)(_ => true) match {
+      matchOrFail(validate[String]("invalid-path", GenericTestFailure)(_ => true)) {
         case -\/(ValueFailure("invalid-path", NullValue)) =>
           assert(true)
-        case result =>
-          assert(false, result)
       }
-      validate[String]("test.invalid-path", GenericTestFailure)(_ => true) match {
+      matchOrFail(validate[String]("test.invalid-path", GenericTestFailure)(_ => true)) {
         case -\/(ValueFailure("test.invalid-path", NullValue)) =>
           assert(true)
-        case result =>
-          assert(false, result)
       }
-      validate[Int]("top-level-name", GenericTestFailure)(_ => true) match {
+      matchOrFail(validate[Int]("top-level-name", GenericTestFailure)(_ => true)) {
         case -\/(ValueFailure("top-level-name", InvalidValueType(_))) =>
           assert(true)
-        case result =>
-          assert(false, result)
+      }
+      matchOrFail(validate[String]("top-level-name", GenericTestFailure)(_ => throw fakeException)) {
+        case -\/(ValueFailure("top-level-name", InvalidValueType(`fakeException`))) =>
+          assert(true)
       }
     }
 
@@ -87,23 +89,17 @@ class ValidatedConfigTest extends FreeSpec {
       assert(unchecked[List[Int]]("test.context.valueDoubleList") == \/-(List(10, 20, 0)))
       assert(unchecked[List[String]]("test.context.valueDoubleList") == \/-(List("10.2", "20", "0.123")))
 
-      unchecked[String]("invalid-path") match {
+      matchOrFail(unchecked[String]("invalid-path")) {
         case -\/(ValueFailure("invalid-path", NullValue)) =>
           assert(true)
-        case result =>
-          assert(false, result)
       }
-      unchecked[String]("test.invalid-path") match {
+      matchOrFail(unchecked[String]("test.invalid-path")) {
         case -\/(ValueFailure("test.invalid-path", NullValue)) =>
           assert(true)
-        case result =>
-          assert(false, result)
       }
-      unchecked[Int]("top-level-name") match {
+      matchOrFail(unchecked[Int]("top-level-name")) {
         case -\/(ValueFailure("top-level-name", InvalidValueType(_))) =>
           assert(true)
-        case result =>
-          assert(false, result)
       }
     }
 
@@ -111,7 +107,7 @@ class ValidatedConfigTest extends FreeSpec {
       case class TestSettings(str: String, int: Int, double: Double, duration: FiniteDuration, strList: List[String], doubleList: List[Double])
 
       "validated building" in {
-        via("test") { implicit config =>
+        val testConfig1 = via("test") { implicit config =>
           build[TestSettings](
             validate[String]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
@@ -120,13 +116,12 @@ class ValidatedConfigTest extends FreeSpec {
             validate[List[String]]("context.valueStrList", GenericTestFailure)(_ => true),
             validate[List[Double]]("context.valueDoubleList", GenericTestFailure)(_ => true)
           )
-        } match {
+        }
+        matchOrFail(testConfig1) {
           case \/-(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
-          case result =>
-            assert(false, result)
         }
-        via("test") { implicit config =>
+        val testConfig2 = via("test") { implicit config =>
           build[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
@@ -135,13 +130,12 @@ class ValidatedConfigTest extends FreeSpec {
             validate[List[String]]("context.valueStrList", GenericTestFailure)(_ => true),
             validate[List[Double]]("context.valueDoubleList", GenericTestFailure)(_ => true)
           )
-        } match {
+        }
+        matchOrFail(testConfig2) {
           case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_))))) =>
             assert(true)
-          case result =>
-            assert(false, result)
         }
-        via("test") { implicit config =>
+        val testConfig3 = via("test") { implicit config =>
           build[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
@@ -150,16 +144,15 @@ class ValidatedConfigTest extends FreeSpec {
             validate[List[String]]("context.valueStrList", GenericTestFailure)(_ => false),
             validate[List[Double]]("context.valueDoubleList", GenericTestFailure)(_ => true)
           )
-        } match {
+        }
+        matchOrFail(testConfig3) {
           case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_)), ValueFailure("test.bad-path.nestedVal", NullValue), ValueFailure("test.context.valueStrList", GenericTestFailure)))) =>
             assert(true)
-          case result =>
-            assert(false, result)
         }
       }
 
       "unchecked building" in {
-        via("test") { implicit config =>
+        val testConfig1 = via("test") { implicit config =>
           build[TestSettings](
             unchecked[String]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
@@ -168,13 +161,12 @@ class ValidatedConfigTest extends FreeSpec {
             unchecked[List[String]]("context.valueStrList"),
             unchecked[List[Double]]("context.valueDoubleList")
           )
-        } match {
+        }
+        matchOrFail(testConfig1) {
           case \/-(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
-          case result =>
-            assert(false, result)
         }
-        via("test") { implicit config =>
+        val testConfig2 = via("test") { implicit config =>
           build[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
@@ -183,13 +175,12 @@ class ValidatedConfigTest extends FreeSpec {
             unchecked[List[String]]("context.valueStrList"),
             unchecked[List[Double]]("context.valueDoubleList")
           )
-        } match {
+        }
+        matchOrFail(testConfig2) {
           case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_))))) =>
             assert(true)
-          case result =>
-            assert(false, result)
         }
-        via("test") { implicit config =>
+        val testConfig3 = via("test") { implicit config =>
           build[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
@@ -198,51 +189,93 @@ class ValidatedConfigTest extends FreeSpec {
             unchecked[List[String]]("context.valueStrList"),
             unchecked[List[Double]]("context.valueDoubleList")
           )
-        } match {
+        }
+        matchOrFail(testConfig3) {
           case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_)), ValueFailure("test.bad-path.nestedVal", NullValue)))) =>
             assert(true)
-          case result =>
-            assert(false, result)
         }
       }
     }
   }
 
-  "Ensure config files may be correctly parsed and validated with environment variable overrides" in {
-    val envMapping = ConfigFactory.parseString(
-      """
-        |env {
-        |  AKKA_HOST = docker-local
-        |  AKKA_PORT = 2552
-        |  AKKA_BIND_HOST = google.co.uk
-        |  AKKA_BIND_PORT = 123
-        |
-        |  HTTP_ADDR = 192.168.99.100
-        |  HTTP_PORT = 5678
-        |}
-      """.stripMargin
-    )
-    implicit val config = ConfigFactory.parseResourcesAnySyntax("application.conf").withFallback(envMapping).resolve()
-
-    val validatedConfig =
-      build[Settings](
-        validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-        validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
-        via("http") { implicit config =>
-          build[HttpConfig](
-            unchecked[String]("host"),
-            validate[Int]("port", ShouldBePositive)(_ > 0)
+  "Ensure config files may be correctly parsed and validated" - {
+    "invalid files fail to load" in {
+      val validatedConfig =
+        validateConfig("non-existent.conf") { implicit config =>
+          build[Settings](
+            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+            via("http") { implicit config =>
+              build[HttpConfig](
+                unchecked[String]("host"),
+                validate[Int]("port", ShouldBePositive)(_ > 0)
+              )
+            }
           )
         }
-      )
 
-    assert(validatedConfig.isRight)
-    validatedConfig match {
-      case \/-(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
-        assert(timeout == 30.seconds)
-      case result =>
-        assert(false, result)
+      matchOrFail(validatedConfig) {
+        case -\/(ConfigError(FileNotFound("non-existent.conf", _))) =>
+          assert(true)
+      }
+    }
+
+    "with environment variable overrides" in {
+      val envMapping = ConfigFactory.parseString(
+        """
+          |env {
+          |  AKKA_HOST = docker-local
+          |  AKKA_PORT = 2552
+          |  AKKA_BIND_HOST = google.co.uk
+          |  AKKA_BIND_PORT = 123
+          |
+          |  HTTP_ADDR = 192.168.99.100
+          |  HTTP_PORT = 5678
+          |}
+        """.
+          stripMargin
+      )
+      implicit val config = ConfigFactory.parseResourcesAnySyntax("application.conf").withFallback(envMapping).resolve()
+
+      val validatedConfig =
+        build[Settings](
+          validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+          validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+          via("http") { implicit config =>
+            build[HttpConfig](
+              unchecked[String]("host"),
+              validate[Int]("port", ShouldBePositive)(_ > 0)
+            )
+          }
+        )
+
+      assert(validatedConfig.isRight)
+      matchOrFail(validatedConfig) {
+        case \/-(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
+          assert(timeout == 30.seconds)
+      }
+    }
+
+    "using system environment variable overrides" in {
+      val validatedConfig =
+        validateConfig("application.conf") { implicit config =>
+          build[Settings](
+            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+            via("http") { implicit config =>
+              build[HttpConfig](
+                unchecked[String]("host"),
+                validate[Int]("port", ShouldBePositive)(_ > 0)
+              )
+            }
+          )
+        }
+
+      assert(validatedConfig.isRight)
+      matchOrFail(validatedConfig) {
+        case \/-(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
+          assert(timeout == 30.seconds)
+      }
     }
   }
-
 }
