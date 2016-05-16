@@ -7,6 +7,8 @@ name := "validated-config"
 
 CommonProject.settings
 
+site.settings
+
 ghpages.settings
 
 resolvers += Resolver.jcenterRepo
