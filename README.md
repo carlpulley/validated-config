@@ -2,7 +2,8 @@
 
 When building reactive applications, it is important to fail early and 
 to avoid throwing exceptions. Here, we apply these principles to the
-[Typesafe config](https://github.com/typesafehub/config) library.
+[Typesafe config](https://github.com/typesafehub/config) library without
+introducing unnecessary boilerplate code.
 
 [![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=develop)](http://travis-ci.org/carlpulley/validated-config)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
@@ -79,6 +80,14 @@ constructs the case class specified in its type constraint. To do this,
 `build` takes a list of arguments that should be the results of either
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
+
+### Secure Validated `Config` Instances
+
+Sometimes, after validating and building a `Config` instance, we do not
+wish the constructed case class instance to be modified (e.g. by calling
+a `copy` constructor) - allowing this could allow validation guarantees
+to be broken! To support such scenarios, one simply extends the trait
+`SecureConfig` and ensures that the case class constructor is private.
 
 ## Parsing Custom Configuration Values
 

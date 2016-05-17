@@ -15,8 +15,13 @@ object ValidatedConfigTest {
   case object ShouldBePositive extends ConfigValidationFailure
   case object ShouldNotBeNegative extends ConfigValidationFailure
 
+  // Permissive case class construction - instances may be altered after creation
   final case class HttpConfig(host: String, port: Int)
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+
+  // Secure case class construction - instances may not change after creation
+  final case class SecureHttpConfig private (host: String, port: Int) extends SecureConfig[SecureHttpConfig]
+  final case class SecureSettings private (name: String, timeout: FiniteDuration, http: SecureHttpConfig) extends SecureConfig[SecureSettings]
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -275,6 +280,42 @@ class ValidatedConfigTest extends FreeSpec {
       matchOrFail(validatedConfig) {
         case \/-(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
           assert(timeout == 30.seconds)
+      }
+    }
+
+    "secure configuration using system environment variable overrides" in {
+      val validatedConfig =
+        validateConfig("application.conf") { implicit config =>
+          build[SecureSettings](
+            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+            via("http") { implicit config =>
+              build[SecureHttpConfig](
+                unchecked[String]("host"),
+                validate[Int]("port", ShouldBePositive)(_ > 0)
+              )
+            }
+          )
+        }
+
+      assert(validatedConfig.isRight)
+      matchOrFail(validatedConfig) {
+        case \/-(secureConfig @ SecureSettings("test-data", timeout, secureHttpConfig)) =>
+          assert(timeout == 30.seconds)
+          assert(secureHttpConfig.host == "localhost")
+          assert(secureHttpConfig.port == 80)
+          // Secure configuration - all constructors are inaccessible and copy constructors are "disabled"
+          classOf[SecureSettings].getConstructors.foreach { constructor =>
+            assert(! constructor.isAccessible)
+          }
+          classOf[SecureHttpConfig].getConstructors.foreach { constructor =>
+            assert(! constructor.isAccessible)
+          }
+          assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
+          assert(classOf[SecureHttpConfig].getMethods.count(_.getName == "copy") == 1)
+          assert(secureConfig.copy() == secureConfig)
+          assert(secureHttpConfig.copy() == secureHttpConfig)
+          assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
       }
     }
   }
