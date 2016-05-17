@@ -20,8 +20,8 @@ object ValidatedConfigTest {
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
 
   // Secure case class construction - instances may not change after creation
-  final case class CopyFreeHttpConfig(host: String, port: Int) extends CopyFreeConfig[CopyFreeHttpConfig]
-  final case class CopyFreeSettings(name: String, timeout: FiniteDuration, http: CopyFreeHttpConfig) extends CopyFreeConfig[CopyFreeSettings]
+  final case class CopyFreeHttpConfig(host: String, port: Int) extends CopyFree[CopyFreeHttpConfig]
+  final case class CopyFreeSettings(name: String, timeout: FiniteDuration, http: CopyFreeHttpConfig) extends CopyFree[CopyFreeSettings]
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -300,17 +300,17 @@ class ValidatedConfigTest extends FreeSpec {
 
       assert(validatedConfig.isRight)
       matchOrFail(validatedConfig) {
-        case \/-(secureConfig @ CopyFreeSettings("test-data", timeout, secureHttpConfig)) =>
+        case \/-(copyFreeConfig @ CopyFreeSettings("test-data", timeout, copyFreeHttpConfig)) =>
           assert(timeout == 30.seconds)
-          assert(secureHttpConfig.host == "localhost")
-          assert(secureHttpConfig.port == 80)
+          assert(copyFreeHttpConfig.host == "localhost")
+          assert(copyFreeHttpConfig.port == 80)
           // Copy free configuration - copy constructor is "disabled"
           assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
           assert(classOf[CopyFreeHttpConfig].getMethods.count(_.getName == "copy") == 1)
           assert(classOf[CopyFreeSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
           assert(classOf[CopyFreeHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(secureConfig.copy() == secureConfig)
-          assert(secureHttpConfig.copy() == secureHttpConfig)
+          assert(copyFreeConfig.copy() == copyFreeConfig)
+          assert(copyFreeHttpConfig.copy() == copyFreeHttpConfig)
           assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
       }
     }

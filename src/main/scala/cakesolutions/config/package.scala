@@ -39,7 +39,7 @@ package object config extends FicusInstances with ToValidationOps {
    *
    * @tparam Config case class we will add the default copy constructor to
    */
-  trait CopyFreeConfig[Config] {
+  trait CopyFree[Config] {
     this: Config =>
 
     def copy(): Config = this
