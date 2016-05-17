@@ -87,7 +87,7 @@ Sometimes, after validating and building a `Config` instance, we do not
 wish the constructed case class instance to be modified (e.g. by calling
 a `copy` constructor) - allowing this could allow validation guarantees
 to be broken! To support such scenarios, one simply extends the trait
-`SecureConfig` and ensures that the case class constructor is private.
+`SecureConfig` when defining the case class.
 
 ## Parsing Custom Configuration Values
 

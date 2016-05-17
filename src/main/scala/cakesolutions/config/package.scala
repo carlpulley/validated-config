@@ -34,7 +34,8 @@ package object config extends FicusInstances with ToValidationOps {
   final case class ConfigError(errors: ValueError*)
 
   /**
-   * Trait that "disables" the case class copy constructor
+   * Trait that "disables" the case class copy constructor and so prohibits modifying a case class instance once it has
+   * been created
    *
    * @tparam Config case class we will add the default copy constructor to
    */

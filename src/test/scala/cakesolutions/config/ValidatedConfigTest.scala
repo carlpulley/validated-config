@@ -20,8 +20,8 @@ object ValidatedConfigTest {
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
 
   // Secure case class construction - instances may not change after creation
-  final case class SecureHttpConfig private (host: String, port: Int) extends SecureConfig[SecureHttpConfig]
-  final case class SecureSettings private (name: String, timeout: FiniteDuration, http: SecureHttpConfig) extends SecureConfig[SecureSettings]
+  final case class SecureHttpConfig(host: String, port: Int) extends SecureConfig[SecureHttpConfig]
+  final case class SecureSettings(name: String, timeout: FiniteDuration, http: SecureHttpConfig) extends SecureConfig[SecureSettings]
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -304,15 +304,11 @@ class ValidatedConfigTest extends FreeSpec {
           assert(timeout == 30.seconds)
           assert(secureHttpConfig.host == "localhost")
           assert(secureHttpConfig.port == 80)
-          // Secure configuration - all constructors are inaccessible and copy constructors are "disabled"
-          classOf[SecureSettings].getConstructors.foreach { constructor =>
-            assert(! constructor.isAccessible)
-          }
-          classOf[SecureHttpConfig].getConstructors.foreach { constructor =>
-            assert(! constructor.isAccessible)
-          }
+          // Secure configuration - copy constructor is "disabled"
           assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
           assert(classOf[SecureHttpConfig].getMethods.count(_.getName == "copy") == 1)
+          assert(classOf[SecureSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
+          assert(classOf[SecureHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
           assert(secureConfig.copy() == secureConfig)
           assert(secureHttpConfig.copy() == secureHttpConfig)
           assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
