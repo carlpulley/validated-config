@@ -81,13 +81,13 @@ constructs the case class specified in its type constraint. To do this,
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
 
-### Secure Validated `Config` Instances
+### Copy-free Validated `Config` Instances
 
 Sometimes, after validating and building a `Config` instance, we do not
 wish the constructed case class instance to be modified (e.g. by calling
 a `copy` constructor) - allowing this could allow validation guarantees
 to be broken! To support such scenarios, one simply extends the trait
-`SecureConfig` when defining the case class.
+`CopyFreeConfig` when defining the case class.
 
 ## Parsing Custom Configuration Values
 

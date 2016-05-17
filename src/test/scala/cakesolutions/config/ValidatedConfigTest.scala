@@ -20,8 +20,8 @@ object ValidatedConfigTest {
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
 
   // Secure case class construction - instances may not change after creation
-  final case class SecureHttpConfig(host: String, port: Int) extends SecureConfig[SecureHttpConfig]
-  final case class SecureSettings(name: String, timeout: FiniteDuration, http: SecureHttpConfig) extends SecureConfig[SecureSettings]
+  final case class CopyFreeHttpConfig(host: String, port: Int) extends CopyFreeConfig[CopyFreeHttpConfig]
+  final case class CopyFreeSettings(name: String, timeout: FiniteDuration, http: CopyFreeHttpConfig) extends CopyFreeConfig[CopyFreeSettings]
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -283,14 +283,14 @@ class ValidatedConfigTest extends FreeSpec {
       }
     }
 
-    "secure configuration using system environment variable overrides" in {
+    "copy free configuration using system environment variable overrides" in {
       val validatedConfig =
         validateConfig("application.conf") { implicit config =>
-          build[SecureSettings](
+          build[CopyFreeSettings](
             validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
             via("http") { implicit config =>
-              build[SecureHttpConfig](
+              build[CopyFreeHttpConfig](
                 unchecked[String]("host"),
                 validate[Int]("port", ShouldBePositive)(_ > 0)
               )
@@ -300,18 +300,18 @@ class ValidatedConfigTest extends FreeSpec {
 
       assert(validatedConfig.isRight)
       matchOrFail(validatedConfig) {
-        case \/-(secureConfig @ SecureSettings("test-data", timeout, secureHttpConfig)) =>
+        case \/-(secureConfig @ CopyFreeSettings("test-data", timeout, secureHttpConfig)) =>
           assert(timeout == 30.seconds)
           assert(secureHttpConfig.host == "localhost")
           assert(secureHttpConfig.port == 80)
-          // Secure configuration - copy constructor is "disabled"
-          assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[SecureHttpConfig].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[SecureSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(classOf[SecureHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
+          // Copy free configuration - copy constructor is "disabled"
+          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
+          assert(classOf[CopyFreeHttpConfig].getMethods.count(_.getName == "copy") == 1)
+          assert(classOf[CopyFreeSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
+          assert(classOf[CopyFreeHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
           assert(secureConfig.copy() == secureConfig)
           assert(secureHttpConfig.copy() == secureHttpConfig)
-          assert(classOf[SecureSettings].getMethods.count(_.getName == "copy") == 1)
+          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
       }
     }
   }
