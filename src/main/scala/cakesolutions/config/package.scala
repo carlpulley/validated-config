@@ -33,6 +33,18 @@ package object config extends FicusInstances with ToValidationOps {
 
   final case class ConfigError(errors: ValueError*)
 
+  /**
+   * Trait that "disables" the case class copy constructor and so prohibits modifying a case class instance once it has
+   * been created
+   *
+   * @tparam Config case class we will add the default copy constructor to
+   */
+  trait CopyFree[Config] {
+    this: Config =>
+
+    def copy(): Config = this
+  }
+
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
   implicit def innerConfigValue[ConfigValue](config: ConfigError \/ ConfigValue): ValueError \/ ConfigValue = {
     config.leftMap(NestedConfigError)
