@@ -81,13 +81,40 @@ constructs the case class specified in its type constraint. To do this,
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
 
-### Copy-free Validated `Config` Instances
+### Secure Validated `Config` Instances
 
 Sometimes, after validating and building a `Config` instance, we do not
 wish the constructed case class instance to be modified (e.g. by calling
 a `copy` constructor) - allowing this could allow validation guarantees
 to be broken! To support such scenarios, one simply extends the trait
 `CopyFreeConfig` when defining the case class.
+
+Secure configuration objects may then be constructed as follows:
+```scala
+object SecureConfigBuilder {
+  abstract case class SecureHttpConfig private[SecureConfigBuilder] (host: String, port: Int) extends CopyFreeConfig[SecureSettings]
+  abstract case class SecureSettings private[SecureConfigBuilder] (name: String, timeout: FiniteDuration, http: HttpConfig) extends CopyFreeConfig[SecureSettings]
+
+  def apply(filename: String): SecureSettings = {
+    validateConfig(filename) { implicit config =>
+      build[SecureSettings](
+        validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+        validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+        via("http") { implicit config =>
+          build[SecureHttpConfig](
+            unchecked[String]("host"),
+            validate[Int]("port", ShouldBePositive)(_ > 0)
+          )
+        }
+      )
+    }
+  }
+}
+```
+Note how:
+* the resulting validated configuration instance `SecureSettings` can not be modifed or copied after it has been created
+* how there is only one way to create instances of `SecureSettings`
+* and, the resulting validated configuration instance can still be used (e.g. in pattern matching) as a typical case class.
 
 ## Parsing Custom Configuration Values
 
