@@ -5,7 +5,7 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=develop)](http://travis-ci.org/carlpulley/validated-config)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=release)](http://travis-ci.org/carlpulley/validated-config)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -16,7 +16,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "cakesolutions.net" %% "validated-config" % "0.1-SNAPSHOT"
+libraryDependencies += "cakesolutions.net" %% "validated-config" % "0.0.1"
 ```
 
 To access the validated Typesafe configuration library code in your
