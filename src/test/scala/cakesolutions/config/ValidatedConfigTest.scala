@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 
 import scala.concurrent.duration._
-import scalaz.{-\/, \/-}
+import scalaz.{-\/, \/, \/-}
 
 object ValidatedConfigTest {
   case object GenericTestFailure extends ConfigValidationFailure
@@ -19,9 +19,80 @@ object ValidatedConfigTest {
   final case class HttpConfig(host: String, port: Int)
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
 
-  // Secure case class construction - instances may not change after creation
-  final case class CopyFreeHttpConfig(host: String, port: Int) extends CopyFree[CopyFreeHttpConfig]
-  final case class CopyFreeSettings(name: String, timeout: FiniteDuration, http: CopyFreeHttpConfig) extends CopyFree[CopyFreeSettings]
+  // Secure case class construction - instances may not change after creation and can not be faked
+  object SecureValidatedConfig {
+    /**
+     * @RestrictedCaseClass
+     * final class SecureHttpConfig private[SecureValidatedConfig] (host: String, port: Int)
+     */
+    object SecureHttpConfig {
+      private[SecureValidatedConfig] def apply(host: String, port: Int) =
+        new SecureHttpConfig(host, port)
+
+      def unapply(obj: SecureHttpConfig): Option[(String, Int)] = {
+        Some((obj.host, obj.port))
+      }
+    }
+    final class SecureHttpConfig private[SecureValidatedConfig] (val host: String, val port: Int) {
+      override def toString: String =
+        s"SecureHttpConfig($host, $port)"
+
+      override def hashCode =
+        List(host, port).map(_.hashCode).reduce[Int] { case (a, b) => 41 * a + b }
+
+      override def equals(other: Any): Boolean = other match {
+        case obj: SecureHttpConfig =>
+          this.isInstanceOf[SecureHttpConfig] &&
+            obj.host == host && obj.port == port
+        case _: Any =>
+          false
+      }
+    }
+    /**
+     * @RestrictedCaseClass
+     * final class SecureSettings private[SecureValidatedConfig] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
+     */
+    object SecureSettings {
+      private[SecureValidatedConfig] def apply(name: String, timeout: FiniteDuration, http: SecureHttpConfig) =
+        new SecureSettings(name, timeout, http)
+
+      def unapply(obj: SecureSettings): Option[(String, FiniteDuration, SecureHttpConfig)] = {
+        Some((obj.name, obj.timeout, obj.http))
+      }
+    }
+    final class SecureSettings private[SecureValidatedConfig] (val name: String, val timeout: FiniteDuration, val http: SecureHttpConfig) {
+      override def toString: String =
+        s"SecureSettings($name, $timeout, $http)"
+
+      override def hashCode =
+        List(name, timeout, http).map(_.hashCode).reduce[Int] { case (a, b) => 41 * a + b }
+
+      override def equals(other: Any): Boolean = other match {
+        case obj: SecureSettings =>
+          obj.isInstanceOf[SecureSettings] &&
+            obj.name == name &&
+            obj.timeout == timeout &&
+            obj.http == http
+        case _: Any =>
+          false
+      }
+    }
+
+    def apply(filename: String): ConfigError \/ SecureSettings = {
+      validateConfig(filename) { implicit config =>
+        build[SecureSettings](
+          validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+          validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+          via("http") { implicit config =>
+            build[SecureHttpConfig](
+              unchecked[String]("host"),
+              validate[Int]("port", ShouldBePositive)(_ > 0)
+            )
+          }
+        )
+      }
+    }
+  }
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -284,34 +355,17 @@ class ValidatedConfigTest extends FreeSpec {
     }
 
     "copy free configuration using system environment variable overrides" in {
-      val validatedConfig =
-        validateConfig("application.conf") { implicit config =>
-          build[CopyFreeSettings](
-            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
-            via("http") { implicit config =>
-              build[CopyFreeHttpConfig](
-                unchecked[String]("host"),
-                validate[Int]("port", ShouldBePositive)(_ > 0)
-              )
-            }
-          )
-        }
+      import SecureValidatedConfig._
+
+      val validatedConfig = SecureValidatedConfig("application.conf")
 
       assert(validatedConfig.isRight)
       matchOrFail(validatedConfig) {
-        case \/-(copyFreeConfig @ CopyFreeSettings("test-data", timeout, copyFreeHttpConfig)) =>
+        case \/-(secureConfig @ SecureSettings(name, timeout, secureHttpConfig)) =>
+          assert(name == "test-data")
           assert(timeout == 30.seconds)
-          assert(copyFreeHttpConfig.host == "localhost")
-          assert(copyFreeHttpConfig.port == 80)
-          // Copy free configuration - copy constructor is "disabled"
-          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[CopyFreeHttpConfig].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[CopyFreeSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(classOf[CopyFreeHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(copyFreeConfig.copy() == copyFreeConfig)
-          assert(copyFreeHttpConfig.copy() == copyFreeHttpConfig)
-          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
+          assert(secureHttpConfig.host == "localhost")
+          assert(secureHttpConfig.port == 80)
       }
     }
   }

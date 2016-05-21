@@ -86,14 +86,12 @@ building inner validated case class instances or from using the
 Sometimes, after validating and building a `Config` instance, we do not
 wish the constructed case class instance to be modified (e.g. by calling
 a `copy` constructor) - allowing this could allow validation guarantees
-to be broken! To support such scenarios, one simply extends the trait
-`CopyFreeConfig` when defining the case class.
-
-Secure configuration objects may then be constructed as follows:
+to be broken! In such scenarios, secure configuration objects may then
+be constructed as follows:
 ```scala
-object SecureConfigBuilder {
-  abstract case class SecureHttpConfig private[SecureConfigBuilder] (host: String, port: Int) extends CopyFreeConfig[SecureSettings]
-  abstract case class SecureSettings private[SecureConfigBuilder] (name: String, timeout: FiniteDuration, http: HttpConfig) extends CopyFreeConfig[SecureSettings]
+object BuildSecureConfig {
+  abstract case class SecureHttpConfig private[SecureConfigBuilder] (host: String, port: Int)
+  abstract case class SecureSettings private[SecureConfigBuilder] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
 
   def apply(filename: String): SecureSettings = {
     validateConfig(filename) { implicit config =>
@@ -110,11 +108,18 @@ object SecureConfigBuilder {
     }
   }
 }
+
+BuildSecureConfig("application.conf") foreach {
+  case \/-(SecureSettings(name, _, SecureHttpConfig(host, port))) =>
+    println(s"$name = $host:$port")
+}
 ```
 Note how:
-* the resulting validated configuration instance `SecureSettings` can not be modifed or copied after it has been created
+* the resulting validated configuration instance `SecureSettings` can not
+  be modified or copied after it has been created
 * how there is only one way to create instances of `SecureSettings`
-* and, the resulting validated configuration instance can still be used (e.g. in pattern matching) as a typical case class.
+* and, the resulting validated configuration instance can still be used
+  (e.g. in pattern matching) as a typical case class.
 
 ## Parsing Custom Configuration Values
 

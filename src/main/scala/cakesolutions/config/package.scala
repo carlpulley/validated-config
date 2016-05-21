@@ -2,7 +2,7 @@
 
 package cakesolutions
 
-import com.typesafe.config.{ConfigParseOptions, ConfigResolveOptions, Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigResolveOptions}
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
 import shapeless._
@@ -32,18 +32,6 @@ package object config extends FicusInstances with ToValidationOps {
   final case class ValueFailure(path: String, reason: ConfigValidationFailure) extends ValueError
 
   final case class ConfigError(errors: ValueError*)
-
-  /**
-   * Trait that "disables" the case class copy constructor and so prohibits modifying a case class instance once it has
-   * been created
-   *
-   * @tparam Config case class we will add the default copy constructor to
-   */
-  trait CopyFree[Config] {
-    this: Config =>
-
-    def copy(): Config = this
-  }
 
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
   implicit def innerConfigValue[ConfigValue](config: ConfigError \/ ConfigValue): ValueError \/ ConfigValue = {
@@ -75,7 +63,7 @@ package object config extends FicusInstances with ToValidationOps {
   // Validated configuration builders
 
   /**
-   *
+   * The currently in-scope implicit `Config` instance is restricted to a specified path
    *
    * @param path we restrict our Typesafe config path to this path
    * @param inner configuration builder that we will apply to the restricted `Config` object
