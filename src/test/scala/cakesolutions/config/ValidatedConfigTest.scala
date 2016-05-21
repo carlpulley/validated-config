@@ -3,6 +3,7 @@
 package cakesolutions.config
 
 import cakesolutions.config.ValidatedConfigTest._
+import cakesolutions.config.secure._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 
@@ -21,62 +22,11 @@ object ValidatedConfigTest {
 
   // Secure case class construction - instances may not change after creation and can not be faked
   object SecureValidatedConfig {
-    /**
-     * @RestrictedCaseClass
-     * final class SecureHttpConfig private[SecureValidatedConfig] (host: String, port: Int)
-     */
-    object SecureHttpConfig {
-      private[SecureValidatedConfig] def apply(host: String, port: Int) =
-        new SecureHttpConfig(host, port)
+    @CaseClassLike
+    final class SecureHttpConfig private[SecureValidatedConfig] (host: String, port: Int)
 
-      def unapply(obj: SecureHttpConfig): Option[(String, Int)] = {
-        Some((obj.host, obj.port))
-      }
-    }
-    final class SecureHttpConfig private[SecureValidatedConfig] (val host: String, val port: Int) {
-      override def toString: String =
-        s"SecureHttpConfig($host, $port)"
-
-      override def hashCode =
-        List(host, port).map(_.hashCode).reduce[Int] { case (a, b) => 41 * a + b }
-
-      override def equals(other: Any): Boolean = other match {
-        case obj: SecureHttpConfig =>
-          this.isInstanceOf[SecureHttpConfig] &&
-            obj.host == host && obj.port == port
-        case _: Any =>
-          false
-      }
-    }
-    /**
-     * @RestrictedCaseClass
-     * final class SecureSettings private[SecureValidatedConfig] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
-     */
-    object SecureSettings {
-      private[SecureValidatedConfig] def apply(name: String, timeout: FiniteDuration, http: SecureHttpConfig) =
-        new SecureSettings(name, timeout, http)
-
-      def unapply(obj: SecureSettings): Option[(String, FiniteDuration, SecureHttpConfig)] = {
-        Some((obj.name, obj.timeout, obj.http))
-      }
-    }
-    final class SecureSettings private[SecureValidatedConfig] (val name: String, val timeout: FiniteDuration, val http: SecureHttpConfig) {
-      override def toString: String =
-        s"SecureSettings($name, $timeout, $http)"
-
-      override def hashCode =
-        List(name, timeout, http).map(_.hashCode).reduce[Int] { case (a, b) => 41 * a + b }
-
-      override def equals(other: Any): Boolean = other match {
-        case obj: SecureSettings =>
-          obj.isInstanceOf[SecureSettings] &&
-            obj.name == name &&
-            obj.timeout == timeout &&
-            obj.http == http
-        case _: Any =>
-          false
-      }
-    }
+    @CaseClassLike
+    final class SecureSettings private[SecureValidatedConfig] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
 
     def apply(filename: String): ConfigError \/ SecureSettings = {
       validateConfig(filename) { implicit config =>
@@ -355,7 +305,6 @@ class ValidatedConfigTest extends FreeSpec {
     }
 
     "copy free configuration using system environment variable overrides" in {
-      import SecureValidatedConfig._
 
       val validatedConfig = SecureValidatedConfig("application.conf")
 

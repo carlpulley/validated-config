@@ -5,7 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=develop)](http://travis-ci.org/carlpulley/validated-config)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=0.0.1)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.maven/apache-maven.svg?maxAge=2592000)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.11%7C0.0.1%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -16,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "cakesolutions.net" %% "validated-config" % "0.1-SNAPSHOT"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.0.2-SNAPSHOT"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -81,7 +82,7 @@ constructs the case class specified in its type constraint. To do this,
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
 
-### Secure Validated `Config` Instances
+## Secure Validated `Config` Instances
 
 Sometimes, after validating and building a `Config` instance, we do not
 wish the constructed case class instance to be modified (e.g. by calling
@@ -89,12 +90,16 @@ a `copy` constructor) - allowing this could allow validation guarantees
 to be broken! In such scenarios, secure configuration objects may then
 be constructed as follows:
 ```scala
-object BuildSecureConfig {
-  abstract case class SecureHttpConfig private[SecureConfigBuilder] (host: String, port: Int)
-  abstract case class SecureSettings private[SecureConfigBuilder] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
+import cakesolutions.config.secure._
 
-  def apply(filename: String): SecureSettings = {
-    validateConfig(filename) { implicit config =>
+object SecureValidatedConfig {
+  @CaseClassLike
+  final case class SecureHttpConfig private[SecureValidatedConfig] (host: String, port: Int)
+  @CaseClassLike
+  final case class SecureSettings private[SecureValidatedConfig] (name: String, timeout: FiniteDuration, http: SecureHttpConfig)
+
+  def apply(resource: String): SecureSettings = {
+    validateConfig(resource) { implicit config =>
       build[SecureSettings](
         validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
         validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
@@ -109,17 +114,25 @@ object BuildSecureConfig {
   }
 }
 
-BuildSecureConfig("application.conf") foreach {
+SecureValidatedConfig("application.conf") foreach {
   case \/-(SecureSettings(name, _, SecureHttpConfig(host, port))) =>
     println(s"$name = $host:$port")
 }
 ```
+
 Note how:
+* the class annotation `@CaseClassLike` constructs a case class like class
+  (with parameter `val`'s, `toString` and equality methods) and a companion
+  object (whose `apply` has the same access modifiers applied as the classes
+  constructor
 * the resulting validated configuration instance `SecureSettings` can not
   be modified or copied after it has been created
 * how there is only one way to create instances of `SecureSettings`
 * and, the resulting validated configuration instance can still be used
   (e.g. in pattern matching) as a typical case class.
+
+In order to use the `@CaseClassLike` annotation it is necessary to include
+the [Macro Paradise](http://docs.scala-lang.org/overviews/macros/paradise.html) plugin in your project.
 
 ## Parsing Custom Configuration Values
 

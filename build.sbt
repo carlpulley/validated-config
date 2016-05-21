@@ -5,6 +5,8 @@ import sbt.Keys._
 
 name := "validated-config"
 
+version := "0.0.2-SNAPSHOT"
+
 CommonProject.settings
 
 site.settings

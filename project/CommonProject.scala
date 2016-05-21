@@ -33,7 +33,8 @@ object CommonProject {
       outputStrategy := Some(StdoutOutput),
       fork := true,
       fork in test := true,
-      sbtPlugin := false
+      sbtPlugin := false,
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
     )
 
 }

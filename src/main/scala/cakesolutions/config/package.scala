@@ -43,20 +43,20 @@ package object config extends FicusInstances with ToValidationOps {
   /**
    * Loads Typesafe config file and then builds the validated case class `ValidConfig`
    *
-   * @param configFile the root Typesafe config file name
+   * @param resource the root Typesafe config resource name
    * @param check the builder and validator that we will use to construct the `ValidConfig` instance
    * @tparam ValidConfig the case class type that we are to construct
    * @return either a [[ConfigError]] or the validated case class `ValidConfig`
    */
   def validateConfig[ValidConfig](
-    configFile: String
+    resource: String
   )(check: Config => ConfigError \/ ValidConfig
   ): ConfigError \/ ValidConfig = {
-    Try(ConfigFactory.load(configFile, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.defaults())) match {
+    Try(ConfigFactory.load(resource, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.defaults())) match {
       case Success(config) =>
         check(config)
       case Failure(exn) =>
-        -\/(ConfigError(FileNotFound(configFile, exn)))
+        -\/(ConfigError(FileNotFound(resource, exn)))
     }
   }
 
