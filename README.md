@@ -16,7 +16,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "cakesolutions.net" %% "validated-config" % "0.0.1"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.0.1"
 ```
 
 To access the validated Typesafe configuration library code in your
