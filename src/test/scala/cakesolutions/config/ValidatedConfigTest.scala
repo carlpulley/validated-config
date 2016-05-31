@@ -222,6 +222,20 @@ class ValidatedConfigTest extends FreeSpec {
       }
     }
 
+    "valid file but with validation failure" in {
+      case object NotAHttpPort extends Exception
+
+      val validatedConfig =
+        validateConfig("http.conf") { implicit config =>
+          build[HttpConfig](
+            unchecked[String]("http.host"),
+            validate[Int]("http.port", NotAHttpPort)(_ != 80)
+          )
+        }
+
+      assert(validatedConfig == Failure(ConfigError(ValueFailure("http.port", NotAHttpPort))))
+    }
+
     "with environment variable overrides" in {
       val envMapping = ConfigFactory.parseString(
         """
