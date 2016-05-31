@@ -5,7 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?branch=release/0.0.1)](http://travis-ci.org/carlpulley/validated-config)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=0.0.2)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.maven/apache-maven.svg?maxAge=2592000)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.11%7C0.0.2%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -16,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.0.1"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.0.2"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -48,19 +49,19 @@ has been parsed and read into an implicit of type `Config`, then we are
 able to validate that the value at the path `test.nestedVal` has type
 `Double` and that it satisfies specified size bounds as follows:
 ```scala
-case object ShouldBeAPercentageValue extends ConfigValidationFailure
+case object ShouldBeAPercentageValue extends Exception
 
 validate[Double]("test.nestedVal", ShouldBeAPercentageValue)(n => 0 <= n && n <= 100)
 ```
 If the configuration value at path `test.nestedVal` fails to pass the
-percentage bounds check, then `-\/(ShouldBeAPercentageValue)` is
+percentage bounds check, then `Left(ShouldBeAPercentageValue)` is
 returned.
 
 Likewise, we can enforce that all values in the array at the path
 `test.context.valueStrList` match the regular expression pattern
 `[a-z0-9]+:[0-9]+` as follows:
 ```scala
-case object ShouldBeASocketValue extends ConfigValidationFailure
+case object ShouldBeASocketValue extends Exception
 
 validate[List[String]]("test.context.valueStrList", ShouldBeASocketValue)(_.matches("[a-z0-9]+:[0-9]+"))
 ```
@@ -81,14 +82,6 @@ constructs the case class specified in its type constraint. To do this,
 building inner validated case class instances or from using the
 `validate` or `unchecked` methods to validate values at a given path.
 
-### Copy-free Validated `Config` Instances
-
-Sometimes, after validating and building a `Config` instance, we do not
-wish the constructed case class instance to be modified (e.g. by calling
-a `copy` constructor) - allowing this could allow validation guarantees
-to be broken! To support such scenarios, one simply extends the trait
-`CopyFreeConfig` when defining the case class.
-
 ## Parsing Custom Configuration Values
 
 As both `unchecked` and `validate` use [Ficus](https://github.com/iheartradio/ficus) [ValueReader](https://github.com/iheartradio/ficus/blob/master/src/main/scala/net/ceedubs/ficus/readers/ValueReader.scala)'s to parse
@@ -98,8 +91,8 @@ and type check configuration values, we only need to define a [custom extractor]
 
 Given the following Scala case classes:
 ```scala
-case object NameShouldBeNonEmptyAndLowerCase extends ConfigValidationFailure
-case object ShouldBePositive extends ConfigValidationFailure
+case object NameShouldBeNonEmptyAndLowerCase extends Exception
+case object ShouldBePositive extends Exception
 
 final case class HttpConfig(host: String, port: Int)
 final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
@@ -132,3 +125,5 @@ follows:
    )
  }
 ```
+Internally, we use `scala.Either` for error signal management - however, `validateConfig` aggregates and materialises
+such errors as a `Try` instance.
