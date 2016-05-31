@@ -2,29 +2,26 @@
 
 package cakesolutions.config
 
-import cakesolutions.config.ValidatedConfigTest._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 
 import scala.concurrent.duration._
-import scalaz.{-\/, \/-}
+import scala.util.{Failure, Success}
 
 object ValidatedConfigTest {
-  case object GenericTestFailure extends ConfigValidationFailure
-  case object NameShouldBeNonEmptyAndLowerCase extends ConfigValidationFailure
-  case object ShouldBePositive extends ConfigValidationFailure
-  case object ShouldNotBeNegative extends ConfigValidationFailure
+  case object GenericTestFailure extends Exception
+  case object NameShouldBeNonEmptyAndLowerCase extends Exception
+  case object ShouldBePositive extends Exception
+  case object ShouldNotBeNegative extends Exception
 
   // Permissive case class construction - instances may be altered after creation
   final case class HttpConfig(host: String, port: Int)
   final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
-
-  // Secure case class construction - instances may not change after creation
-  final case class CopyFreeHttpConfig(host: String, port: Int) extends CopyFree[CopyFreeHttpConfig]
-  final case class CopyFreeSettings(name: String, timeout: FiniteDuration, http: CopyFreeHttpConfig) extends CopyFree[CopyFreeSettings]
 }
 
 class ValidatedConfigTest extends FreeSpec {
+  import ValidatedConfigTest._
+
   private def matchOrFail[Value](value: => Value)(matcher: PartialFunction[Value, Unit]): Unit = {
     (matcher orElse[Value, Unit] { case result: Value => assert(false, result) })(value)
   }
@@ -50,60 +47,60 @@ class ValidatedConfigTest extends FreeSpec {
       """.stripMargin)
 
     "validate method" in {
-      assert(validate[String]("top-level-name", GenericTestFailure)("test" == _) == \/-("test"))
-      assert(validate[Double]("test.nestedVal", GenericTestFailure)(50.68 == _) == \/-(50.68))
-      assert(validate[FiniteDuration]("test.nestedDuration", GenericTestFailure)(4.hours == _) == \/-(4.hours))
-      assert(validate[List[Double]]("test.nestedList", GenericTestFailure)(_.isEmpty) == \/-(List.empty[Double]))
-      assert(validate[Int]("test.context.valueInt", GenericTestFailure)(30 == _) == \/-(30))
-      assert(validate[String]("test.context.valueStr", GenericTestFailure)("test string" == _) == \/-("test string"))
-      assert(validate[FiniteDuration]("test.context.valueDuration", GenericTestFailure)(12.milliseconds == _) == \/-(12.milliseconds))
-      assert(validate[List[String]]("test.context.valueStrList", GenericTestFailure)(List("addr1:10", "addr2:20", "addr3:30") == _) == \/-(List("addr1:10", "addr2:20", "addr3:30")))
-      assert(validate[List[Double]]("test.context.valueDoubleList", GenericTestFailure)(List(10.2, 20, 0.123) == _) == \/-(List(10.2, 20, 0.123)))
-      assert(validate[List[Int]]("test.context.valueDoubleList", GenericTestFailure)(_ => true) == \/-(List(10, 20, 0)))
-      assert(validate[List[String]]("test.context.valueDoubleList", GenericTestFailure)(_ => true) == \/-(List("10.2", "20", "0.123")))
+      assert(validate[String]("top-level-name", GenericTestFailure)("test" == _) == Right("test"))
+      assert(validate[Double]("test.nestedVal", GenericTestFailure)(50.68 == _) == Right(50.68))
+      assert(validate[FiniteDuration]("test.nestedDuration", GenericTestFailure)(4.hours == _) == Right(4.hours))
+      assert(validate[List[Double]]("test.nestedList", GenericTestFailure)(_.isEmpty) == Right(List.empty[Double]))
+      assert(validate[Int]("test.context.valueInt", GenericTestFailure)(30 == _) == Right(30))
+      assert(validate[String]("test.context.valueStr", GenericTestFailure)("test string" == _) == Right("test string"))
+      assert(validate[FiniteDuration]("test.context.valueDuration", GenericTestFailure)(12.milliseconds == _) == Right(12.milliseconds))
+      assert(validate[List[String]]("test.context.valueStrList", GenericTestFailure)(List("addr1:10", "addr2:20", "addr3:30") == _) == Right(List("addr1:10", "addr2:20", "addr3:30")))
+      assert(validate[List[Double]]("test.context.valueDoubleList", GenericTestFailure)(List(10.2, 20, 0.123) == _) == Right(List(10.2, 20, 0.123)))
+      assert(validate[List[Int]]("test.context.valueDoubleList", GenericTestFailure)(_ => true) == Right(List(10, 20, 0)))
+      assert(validate[List[String]]("test.context.valueDoubleList", GenericTestFailure)(_ => true) == Right(List("10.2", "20", "0.123")))
 
-      assert(validate[String]("top-level-name", GenericTestFailure)(_ => false) == -\/(ValueFailure("top-level-name", GenericTestFailure)))
+      assert(validate[String]("top-level-name", GenericTestFailure)(_ => false) == Left(ValueFailure("top-level-name", GenericTestFailure)))
       matchOrFail(validate[String]("invalid-path", GenericTestFailure)(_ => true)) {
-        case -\/(ValueFailure("invalid-path", NullValue)) =>
+        case Left(ValueFailure("invalid-path", NullValue)) =>
           assert(true)
       }
       matchOrFail(validate[String]("test.invalid-path", GenericTestFailure)(_ => true)) {
-        case -\/(ValueFailure("test.invalid-path", NullValue)) =>
+        case Left(ValueFailure("test.invalid-path", NullValue)) =>
           assert(true)
       }
       matchOrFail(validate[Int]("top-level-name", GenericTestFailure)(_ => true)) {
-        case -\/(ValueFailure("top-level-name", InvalidValueType(_))) =>
+        case Left(ValueFailure("top-level-name", _)) =>
           assert(true)
       }
       matchOrFail(validate[String]("top-level-name", GenericTestFailure)(_ => throw fakeException)) {
-        case -\/(ValueFailure("top-level-name", InvalidValueType(`fakeException`))) =>
+        case Left(ValueFailure("top-level-name", `fakeException`)) =>
           assert(true)
       }
     }
 
     "unchecked method" in {
-      assert(unchecked[String]("top-level-name") == \/-("test"))
-      assert(unchecked[Double]("test.nestedVal") == \/-(50.68))
-      assert(unchecked[FiniteDuration]("test.nestedDuration") == \/-(4.hours))
-      assert(unchecked[List[Double]]("test.nestedList") == \/-(List.empty[Double]))
-      assert(unchecked[Int]("test.context.valueInt") == \/-(30))
-      assert(unchecked[String]("test.context.valueStr") == \/-("test string"))
-      assert(unchecked[FiniteDuration]("test.context.valueDuration") == \/-(12.milliseconds))
-      assert(unchecked[List[String]]("test.context.valueStrList") == \/-(List("addr1:10", "addr2:20", "addr3:30")))
-      assert(unchecked[List[Double]]("test.context.valueDoubleList") == \/-(List(10.2, 20, 0.123)))
-      assert(unchecked[List[Int]]("test.context.valueDoubleList") == \/-(List(10, 20, 0)))
-      assert(unchecked[List[String]]("test.context.valueDoubleList") == \/-(List("10.2", "20", "0.123")))
+      assert(unchecked[String]("top-level-name") == Right("test"))
+      assert(unchecked[Double]("test.nestedVal") == Right(50.68))
+      assert(unchecked[FiniteDuration]("test.nestedDuration") == Right(4.hours))
+      assert(unchecked[List[Double]]("test.nestedList") == Right(List.empty[Double]))
+      assert(unchecked[Int]("test.context.valueInt") == Right(30))
+      assert(unchecked[String]("test.context.valueStr") == Right("test string"))
+      assert(unchecked[FiniteDuration]("test.context.valueDuration") == Right(12.milliseconds))
+      assert(unchecked[List[String]]("test.context.valueStrList") == Right(List("addr1:10", "addr2:20", "addr3:30")))
+      assert(unchecked[List[Double]]("test.context.valueDoubleList") == Right(List(10.2, 20, 0.123)))
+      assert(unchecked[List[Int]]("test.context.valueDoubleList") == Right(List(10, 20, 0)))
+      assert(unchecked[List[String]]("test.context.valueDoubleList") == Right(List("10.2", "20", "0.123")))
 
       matchOrFail(unchecked[String]("invalid-path")) {
-        case -\/(ValueFailure("invalid-path", NullValue)) =>
+        case Left(ValueFailure("invalid-path", NullValue)) =>
           assert(true)
       }
       matchOrFail(unchecked[String]("test.invalid-path")) {
-        case -\/(ValueFailure("test.invalid-path", NullValue)) =>
+        case Left(ValueFailure("test.invalid-path", NullValue)) =>
           assert(true)
       }
       matchOrFail(unchecked[Int]("top-level-name")) {
-        case -\/(ValueFailure("top-level-name", InvalidValueType(_))) =>
+        case Left(ValueFailure("top-level-name", _)) =>
           assert(true)
       }
     }
@@ -123,7 +120,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig1) {
-          case \/-(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
+          case Right(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
         }
         val testConfig2 = via("test") { implicit config =>
@@ -137,7 +134,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig2) {
-          case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_))))) =>
+          case Left(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", _)))) =>
             assert(true)
         }
         val testConfig3 = via("test") { implicit config =>
@@ -151,7 +148,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig3) {
-          case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_)), ValueFailure("test.bad-path.nestedVal", NullValue), ValueFailure("test.context.valueStrList", GenericTestFailure)))) =>
+          case Left(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", _), ValueFailure("test.bad-path.nestedVal", NullValue), ValueFailure("test.context.valueStrList", GenericTestFailure)))) =>
             assert(true)
         }
       }
@@ -168,7 +165,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig1) {
-          case \/-(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
+          case Right(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
         }
         val testConfig2 = via("test") { implicit config =>
@@ -182,7 +179,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig2) {
-          case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_))))) =>
+          case Left(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", _)))) =>
             assert(true)
         }
         val testConfig3 = via("test") { implicit config =>
@@ -196,7 +193,7 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
         matchOrFail(testConfig3) {
-          case -\/(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", InvalidValueType(_)), ValueFailure("test.bad-path.nestedVal", NullValue)))) =>
+          case Left(NestedConfigError(ConfigError(ValueFailure("test.context.valueStr", _), ValueFailure("test.bad-path.nestedVal", NullValue)))) =>
             assert(true)
         }
       }
@@ -220,9 +217,23 @@ class ValidatedConfigTest extends FreeSpec {
         }
 
       matchOrFail(validatedConfig) {
-        case -\/(ConfigError(FileNotFound("non-existent.conf", _))) =>
+        case Failure(FileNotFound("non-existent.conf", _)) =>
           assert(true)
       }
+    }
+
+    "valid file but with validation failure" in {
+      case object NotAHttpPort extends Exception
+
+      val validatedConfig =
+        validateConfig("http.conf") { implicit config =>
+          build[HttpConfig](
+            unchecked[String]("http.host"),
+            validate[Int]("http.port", NotAHttpPort)(_ != 80)
+          )
+        }
+
+      assert(validatedConfig == Failure(ConfigError(ValueFailure("http.port", NotAHttpPort))))
     }
 
     "with environment variable overrides" in {
@@ -256,7 +267,7 @@ class ValidatedConfigTest extends FreeSpec {
 
       assert(validatedConfig.isRight)
       matchOrFail(validatedConfig) {
-        case \/-(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
+        case Right(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
           assert(timeout == 30.seconds)
       }
     }
@@ -276,42 +287,10 @@ class ValidatedConfigTest extends FreeSpec {
           )
         }
 
-      assert(validatedConfig.isRight)
+      assert(validatedConfig.isSuccess)
       matchOrFail(validatedConfig) {
-        case \/-(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
+        case Success(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
           assert(timeout == 30.seconds)
-      }
-    }
-
-    "copy free configuration using system environment variable overrides" in {
-      val validatedConfig =
-        validateConfig("application.conf") { implicit config =>
-          build[CopyFreeSettings](
-            validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-            validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
-            via("http") { implicit config =>
-              build[CopyFreeHttpConfig](
-                unchecked[String]("host"),
-                validate[Int]("port", ShouldBePositive)(_ > 0)
-              )
-            }
-          )
-        }
-
-      assert(validatedConfig.isRight)
-      matchOrFail(validatedConfig) {
-        case \/-(copyFreeConfig @ CopyFreeSettings("test-data", timeout, copyFreeHttpConfig)) =>
-          assert(timeout == 30.seconds)
-          assert(copyFreeHttpConfig.host == "localhost")
-          assert(copyFreeHttpConfig.port == 80)
-          // Copy free configuration - copy constructor is "disabled"
-          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[CopyFreeHttpConfig].getMethods.count(_.getName == "copy") == 1)
-          assert(classOf[CopyFreeSettings].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(classOf[CopyFreeHttpConfig].getMethods.find(_.getName == "copy").get.getParameterCount == 0)
-          assert(copyFreeConfig.copy() == copyFreeConfig)
-          assert(copyFreeHttpConfig.copy() == copyFreeHttpConfig)
-          assert(classOf[CopyFreeSettings].getMethods.count(_.getName == "copy") == 1)
       }
     }
   }
