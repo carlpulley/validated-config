@@ -217,7 +217,7 @@ class ValidatedConfigTest extends FreeSpec {
         }
 
       matchOrFail(validatedConfig) {
-        case Failure(ConfigError(FileNotFound("non-existent.conf", _))) =>
+        case Failure(FileNotFound("non-existent.conf", _)) =>
           assert(true)
       }
     }

@@ -18,12 +18,12 @@ package object config extends FicusInstances {
   case object MissingValue extends Exception
   case object NullValue extends Exception
   final case class ConfigError(errors: ValueError*) extends Exception
+  final case class FileNotFound(file: String, reason: Throwable) extends Exception
 
   /**
    * Reasons why we might fail to parse a value from the config file
    */
   sealed trait ValueError
-  final case class FileNotFound(file: String, reason: Throwable) extends ValueError
   final case class NestedConfigError(config: ConfigError) extends ValueError
   final case class ValueFailure[Value](path: String, reason: Throwable) extends ValueError
 
@@ -50,7 +50,7 @@ package object config extends FicusInstances {
       case Success(config) =>
         check(config).fold(Failure(_), Success(_))
       case Failure(exn) =>
-        Failure(ConfigError(FileNotFound(configFile, exn)))
+        Failure(FileNotFound(configFile, exn))
     }
   }
 
@@ -172,8 +172,6 @@ package object config extends FicusInstances {
   }
 
   private def addBasePathToValueErrors(base: String, error: ValueError): ValueError = error match {
-    case error: FileNotFound =>
-      error
     case NestedConfigError(ConfigError(errors @ _*)) =>
       NestedConfigError(ConfigError(errors.map(addBasePathToValueErrors(base, _)): _*))
     case ValueFailure(path, reason) =>
