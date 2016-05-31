@@ -70,7 +70,7 @@
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="cakesolutions.config" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="cakesolutions.config" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="config"></a>
       <a id="config:config"></a>
       <h4 class="signature">
@@ -86,7 +86,167 @@
         <img src="../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Using <a href="https://github.com/typesafehub/config">Typesafe config</a> we read in and parse configuration files.</a></p><div class="fullcomment"><div class="comment cmt"><p>Using <a href="https://github.com/typesafehub/config">Typesafe config</a> we read in and parse configuration files.
+Paths into these files are then retrieved and type checked using <a href="https://github.com/iheartradio/ficus">Ficus</a>.</p><p>Using a lightweight DSL, we are able to then check and validate these
+type checked values. For example, given that the Typesafe configuration:</p><pre>top-level-name = <span class="lit">"test"</span>
+test {
+  nestedVal = <span class="num">50.68</span>
+  nestedDuration = <span class="num">4</span> h
+  nestedList = []
+  context {
+    valueInt = <span class="num">30</span>
+    valueStr = <span class="lit">"test string"</span>
+    valueDuration = <span class="num">12</span> ms
+    valueStrList = [ <span class="lit">"addr1:10"</span>, <span class="lit">"addr2:20"</span>, <span class="lit">"addr3:30"</span> ]
+    valueDoubleList = [ <span class="num">10.2</span>, <span class="num">20</span>, <span class="num">0.123</span> ]
+  }
+}</pre><p>has been parsed and read into an implicit of type <code>Config</code>, then we are
+able to validate that the value at the path </p><pre>test.nestedVal</pre><p> has type
+<code>Double</code> and that it satisfies specified size bounds as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeAPercentageValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">Double</span>](<span class="lit">"test.nestedVal"</span>, ShouldBeAPercentageValue)(n <span class="kw">=&gt;</span> <span class="num">0</span> &lt;= n &amp;&amp; n &lt;= <span class="num">100</span>)</pre><p>If the configuration value at path </p><pre>test.nestedVal</pre><p> fails to pass the
+percentage bounds check, then </p><pre>Left(ShouldBeAPercentageValue)</pre><p> is
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>Left(ShouldBeAPercentageValue)
+}}}
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.nestedVal
+}}}
+percentage bounds check, then </p><pre>Left(ShouldBeAPercentageValue)</pre><p> is
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>Left(ShouldBeAPercentageValue)
+}}}
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.nestedVal
+}}}
+<code>Double</code> and that it satisfies specified size bounds as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeAPercentageValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">Double</span>](<span class="lit">"test.nestedVal"</span>, ShouldBeAPercentageValue)(n <span class="kw">=&gt;</span> <span class="num">0</span> &lt;= n &amp;&amp; n &lt;= <span class="num">100</span>)</pre><p>If the configuration value at path </p><pre>test.nestedVal</pre><p> fails to pass the
+percentage bounds check, then </p><pre>Left(ShouldBeAPercentageValue)</pre><p> is
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>Left(ShouldBeAPercentageValue)
+}}}
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.nestedVal
+}}}
+percentage bounds check, then </p><pre>Left(ShouldBeAPercentageValue)</pre><p> is
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>Left(ShouldBeAPercentageValue)
+}}}
+returned.</p><p>Likewise, we can enforce that all values in the array at the path</p><pre>test.context.valueStrList</pre><p> match the regular expression pattern</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>test.context.valueStrList
+}}}</p><pre>[a-z0-<span class="num">9</span>]+:[<span class="num">0</span>-<span class="num">9</span>]+</pre><p> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre><p>[a-z0-9]+:[0-9]+
+}}}</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
+
+validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
+configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre></div></div>
     </li></ol>
             </div>
 
