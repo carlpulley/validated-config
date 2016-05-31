@@ -11,7 +11,7 @@ object CommonProject {
   val settings =
     Seq(
       organization := "net.cakesolutions",
-      scalaVersion := "2.11.8",
+      scalaVersion := Dependencies.scalaVersion,
       scalacOptions in Compile ++= Seq(
         "-encoding", "UTF-8",
         "-target:jvm-1.8",
@@ -32,9 +32,7 @@ object CommonProject {
       javaOptions += "-Xmx2G",
       outputStrategy := Some(StdoutOutput),
       fork := true,
-      fork in test := true,
-      sbtPlugin := false,
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      fork in test := true
     )
 
 }
