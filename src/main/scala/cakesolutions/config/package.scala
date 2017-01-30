@@ -60,10 +60,27 @@ import scala.util.{Failure, Success, Try}
  */
 package object config extends FicusInstances {
   /**
+   * Ensures that the specified path has a value defined for it. This is achieved using a sentinal value: the path has
+   * the sentinal value if and only if it has not been set or assigned to.
+   *
+   * undefined sentinal value that indicates if this path value has been set or not (by default, this is the
+   *   string "NOT_SET")
+   */
+  /**
+   * TODO: document and implement required behaviour!!!
+   */
+  sealed trait PathSpec {
+    def value: String
+  }
+  final case class optional(value: String) extends PathSpec
+  final case class required(value: String, undefined: String = "NOT_SET") extends PathSpec
+
+  /**
    * General reasons for why a config value might fail to be validated by `validate`.
    */
   case object MissingValue extends Exception
   case object NullValue extends Exception
+  case object ValueNotSet extends Exception
   final case class ConfigError(errors: ValueError*) extends Exception
   final case class FileNotFound(file: String, reason: Throwable) extends Exception
 
@@ -154,25 +171,33 @@ package object config extends FicusInstances {
    * @return either a `ValueFailure` or the parsed and *unchecked* `Value` instance
    */
   def unchecked[Value](
+    path: PathSpec
+  )(implicit config: Config,
+    reader: ValueReader[Value]
+  ): Either[ValueFailure[Value], Value] = {
+    Try(config.hasPath(path.value)) match {
+      case Success(true) =>
+        Try(config.as[Value](path.value)) match {
+          case Success(value) =>
+            Right(value)
+          case Failure(exn) =>
+            Left(ValueFailure[Value](path.value, exn))
+        }
+      case Success(false) =>
+        Left(ValueFailure[Value](path.value, NullValue))
+      // $COVERAGE-OFF$ Requires `hasPath` to throw
+      case Failure(_) =>
+        Left(ValueFailure[Value](path.value, MissingValue))
+      // $COVERAGE-ON$
+    }
+  }
+
+  def unchecked[Value](
     path: String
   )(implicit config: Config,
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
-    Try(config.hasPath(path)) match {
-      case Success(true) =>
-        Try(config.as[Value](path)) match {
-          case Success(value) =>
-            Right(value)
-          case Failure(exn) =>
-            Left(ValueFailure[Value](path, exn))
-        }
-      case Success(false) =>
-        Left(ValueFailure[Value](path, NullValue))
-      // $COVERAGE-OFF$ Requires `hasPath` to throw
-      case Failure(_) =>
-        Left(ValueFailure[Value](path, MissingValue))
-      // $COVERAGE-ON$
-    }
+    unchecked[Value](optional(path))(config, reader)
   }
 
   /**
@@ -188,34 +213,44 @@ package object config extends FicusInstances {
    * @return either a `ValueFailure` or the parsed and checked `Value` instance
    */
   def validate[Value](
+    path: PathSpec,
+    failureReason: Throwable
+  )(check: Value => Boolean
+  )(implicit config: Config,
+    reader: ValueReader[Value]
+  ): Either[ValueFailure[Value], Value] = {
+    Try(config.hasPath(path.value)) match {
+      case Success(true) =>
+        Try(config.as[Value](path.value)) match {
+          case Success(value) =>
+            Try(check(value)) match {
+              case Success(true) =>
+                Right(value)
+              case Success(false) =>
+                Left(ValueFailure[Value](path.value, failureReason))
+              case Failure(exn) =>
+                Left(ValueFailure[Value](path.value, exn))
+            }
+          case Failure(exn) =>
+            Left(ValueFailure[Value](path.value, exn))
+        }
+      case Success(false) =>
+        Left(ValueFailure[Value](path.value, NullValue))
+      // $COVERAGE-OFF$ Requires `hasPath` to throw
+      case Failure(_) =>
+        Left(ValueFailure[Value](path.value, MissingValue))
+      // $COVERAGE-ON$
+    }
+  }
+
+  def validate[Value](
     path: String,
     failureReason: Throwable
   )(check: Value => Boolean
   )(implicit config: Config,
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
-    Try(config.hasPath(path)) match {
-      case Success(true) =>
-        Try(config.as[Value](path)) match {
-          case Success(value) =>
-            Try(check(value)) match {
-              case Success(true) =>
-                Right(value)
-              case Success(false) =>
-                Left(ValueFailure[Value](path, failureReason))
-              case Failure(exn) =>
-                Left(ValueFailure[Value](path, exn))
-            }
-          case Failure(exn) =>
-            Left(ValueFailure[Value](path, exn))
-        }
-      case Success(false) =>
-        Left(ValueFailure[Value](path, NullValue))
-      // $COVERAGE-OFF$ Requires `hasPath` to throw
-      case Failure(_) =>
-        Left(ValueFailure[Value](path, MissingValue))
-      // $COVERAGE-ON$
-    }
+    validate[Value](optional(path), failureReason)(check)(config, reader)
   }
 
   private def addBasePathToValueErrors(base: String, error: ValueError): ValueError = error match {
