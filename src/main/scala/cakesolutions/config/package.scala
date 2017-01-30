@@ -59,7 +59,6 @@ import scala.util.{Failure, Success, Try}
  * }}}
  */
 package object config extends FicusInstances {
-
   /**
    * General reasons for why a config value might fail to be validated by `validate`.
    */
@@ -136,7 +135,7 @@ package object config extends FicusInstances {
     }
 
     failuresHList match {
-      case (Nil, result: gen.Repr) =>
+      case (Nil, result: (gen.Repr @unchecked)) =>
         Right(gen.from(result))
       case (failures, _) =>
         Left(ConfigError(failures: _*))

@@ -4,11 +4,13 @@ import Dependencies._
 
 name := "validated-config"
 
-version := "0.0.2"
+version := "0.0.3-SNAPSHOT"
 
 CommonProject.settings
 
 ScalaDoc.settings
+enablePlugins(GhpagesPlugin)
+enablePlugins(SiteScaladocPlugin)
 
 Publish.settings
 
@@ -16,7 +18,7 @@ resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++= Seq(
   ficus,
-  scalatest % "test",
+  scalatest % Test,
   shapeless,
   typesafeConfig
 )

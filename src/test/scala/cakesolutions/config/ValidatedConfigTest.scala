@@ -23,7 +23,7 @@ class ValidatedConfigTest extends FreeSpec {
   import ValidatedConfigTest._
 
   private def matchOrFail[Value](value: => Value)(matcher: PartialFunction[Value, Unit]): Unit = {
-    (matcher orElse[Value, Unit] { case result: Value => assert(false, result) })(value)
+    matcher.orElse[Value, Unit] { case result => assert(false, result) }(value)
   }
 
   "parameter checking" - {
