@@ -80,9 +80,15 @@ package object config extends FicusInstances {
    */
   case object MissingValue extends Exception
   case object NullValue extends Exception
-  case object ValueNotSet extends Exception
-  final case class ConfigError(errors: ValueError*) extends Exception
-  final case class FileNotFound(file: String, reason: Throwable) extends Exception
+  case object RequiredValueNotSet extends Exception
+  final case class ConfigError(errors: ValueError*) extends Exception {
+    override def toString: String =
+      s"ConfigError(${errors.map(_.toString).mkString(",")})"
+  }
+  final case class FileNotFound(file: String, reason: Throwable) extends Exception {
+    override def toString: String =
+      s"FileNotFound($file,$reason)"
+  }
 
   /**
    * Reasons why we might fail to parse a value from the config file
@@ -177,11 +183,13 @@ package object config extends FicusInstances {
   ): Either[ValueFailure[Value], Value] = {
     Try(config.hasPath(path.value)) match {
       case Success(true) =>
-        Try(config.as[Value](path.value)) match {
-          case Success(value) =>
-            Right(value)
-          case Failure(exn) =>
-            Left(ValueFailure[Value](path.value, exn))
+        checkedPath[Value](path).flatMap { path =>
+          Try(config.as[Value](path)) match {
+            case Success(value) =>
+              Right(value)
+            case Failure(exn) =>
+              Left(ValueFailure[Value](path, exn))
+          }
         }
       case Success(false) =>
         Left(ValueFailure[Value](path.value, NullValue))
@@ -221,18 +229,20 @@ package object config extends FicusInstances {
   ): Either[ValueFailure[Value], Value] = {
     Try(config.hasPath(path.value)) match {
       case Success(true) =>
-        Try(config.as[Value](path.value)) match {
-          case Success(value) =>
-            Try(check(value)) match {
-              case Success(true) =>
-                Right(value)
-              case Success(false) =>
-                Left(ValueFailure[Value](path.value, failureReason))
-              case Failure(exn) =>
-                Left(ValueFailure[Value](path.value, exn))
-            }
-          case Failure(exn) =>
-            Left(ValueFailure[Value](path.value, exn))
+        checkedPath[Value](path).flatMap { path =>
+          Try(config.as[Value](path)) match {
+            case Success(value) =>
+              Try(check(value)) match {
+                case Success(true) =>
+                  Right(value)
+                case Success(false) =>
+                  Left(ValueFailure[Value](path, failureReason))
+                case Failure(exn) =>
+                  Left(ValueFailure[Value](path, exn))
+              }
+            case Failure(exn) =>
+              Left(ValueFailure[Value](path, exn))
+          }
         }
       case Success(false) =>
         Left(ValueFailure[Value](path.value, NullValue))
@@ -251,6 +261,27 @@ package object config extends FicusInstances {
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
     validate[Value](optional(path), failureReason)(check)(config, reader)
+  }
+
+  private def checkedPath[Value](
+    path: PathSpec
+  )(implicit config: Config
+  ): Either[ValueFailure[Value], String] = {
+    path match {
+      case optional(value) =>
+        Right(value)
+      case required(value, undefined) =>
+        Try(config.getValue(value).unwrapped()) match {
+          case actual @ Success(`undefined`) =>
+            Left(ValueFailure[Value](path.value, RequiredValueNotSet))
+          case Success(actual) =>
+            Right(value)
+          // $COVERAGE-OFF$ Requires `getValue` or `unwrapped` to throw
+          case Failure(exn) =>
+            Left(ValueFailure[Value](value, exn))
+          // $COVERAGE-ON$
+        }
+    }
   }
 
   private def addBasePathToValueErrors(base: String, error: ValueError): ValueError = error match {
