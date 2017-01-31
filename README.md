@@ -163,3 +163,10 @@ object Settings {
 }
 ```
 Here, package `secure` is responsible for loading and parsing our configuration files.
+
+As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc93f846835ed21c92d2) and discussed in 
+[Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of a sealed abstract case class
+ensures that constructors, copy constructors and companion apply methods are not created.
+Hence, the only way that instances of `HttpConfig` and `Settings` can be created is by the
+the package protected code in their respective companion objects - thus we ensure that all
+such validated configurations are compile time checked as being invariant!
