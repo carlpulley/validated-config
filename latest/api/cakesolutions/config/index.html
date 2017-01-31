@@ -162,6 +162,20 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
                         </a>
                       </li><li class="current-entities indented2">
                         <span class="separator"></span>
+                        <a class="trait" href="package$$PathSpec.html" title="TODO: document and implement required behaviour!!!
+"></a>
+                        <a href="package$$PathSpec.html" title="TODO: document and implement required behaviour!!!
+">
+                          PathSpec
+                        </a>
+                      </li><li class="current-entities indented2">
+                        <span class="separator"></span>
+                        <a class="object" href="package$$RequiredValueNotSet$.html" title=""></a>
+                        <a href="package$$RequiredValueNotSet$.html" title="">
+                          RequiredValueNotSet
+                        </a>
+                      </li><li class="current-entities indented2">
+                        <span class="separator"></span>
                         <a class="trait" href="package$$ValueError.html" title="Reasons why we might fail to parse a value from the config file
 "></a>
                         <a href="package$$ValueError.html" title="Reasons why we might fail to parse a value from the config file
@@ -173,6 +187,18 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
                         <a class="class" href="package$$ValueFailure.html" title=""></a>
                         <a href="package$$ValueFailure.html" title="">
                           ValueFailure
+                        </a>
+                      </li><li class="current-entities indented2">
+                        <span class="separator"></span>
+                        <a class="class" href="package$$optional.html" title=""></a>
+                        <a href="package$$optional.html" title="">
+                          optional
+                        </a>
+                      </li><li class="current-entities indented2">
+                        <span class="separator"></span>
+                        <a class="class" href="package$$required.html" title=""></a>
+                        <a href="package$$required.html" title="">
+                          required
                         </a>
                       </li>
               </ul>
@@ -333,6 +359,26 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
       </span>
       
       
+    </li><li name="cakesolutions.config.PathSpec" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="PathSpecextendsAnyRef"></a><a id="PathSpec:PathSpec"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#PathSpecextendsAnyRef" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a title="TODO: document and implement required behaviour!!!
+" href="package$$PathSpec.html">
+              <span class="name">PathSpec</span>
+            </a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">TODO: document and implement required behaviour!!!
+</p>
     </li><li name="cakesolutions.config.ValueError" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="ValueErrorextendsAnyRef"></a><a id="ValueError:ValueError"></a>
       <span class="permalink">
@@ -368,6 +414,42 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
         <a title="" href="package$$ValueFailure.html">
               <span class="name">ValueFailure</span>
             </a><span class="tparams">[<span name="Value">Value</span>]</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="reason">reason: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="result"> extends <a href="package$$ValueError.html" class="extype" name="cakesolutions.config.ValueError">ValueError</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      
+    </li><li name="cakesolutions.config.optional" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="optionalextendspackage.PathSpecwithProductwithSerializable"></a><a id="optional:optional"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#optionalextendspackage.PathSpecwithProductwithSerializable" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="package$$optional.html">
+              <span class="name">optional</span>
+            </a><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="package$$PathSpec.html" class="extype" name="cakesolutions.config.PathSpec">PathSpec</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      
+    </li><li name="cakesolutions.config.required" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="requiredextendspackage.PathSpecwithProductwithSerializable"></a><a id="required:required"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#requiredextendspackage.PathSpecwithProductwithSerializable" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="package$$required.html">
+              <span class="name">required</span>
+            </a><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="undefined">undefined: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;NOT_SET&quot;</span></span>)</span><span class="result"> extends <a href="package$$PathSpec.html" class="extype" name="cakesolutions.config.PathSpec">PathSpec</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       
@@ -732,7 +814,7 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TryReader</dd></dl></div>
-    </li><li name="cakesolutions.config#unchecked" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="cakesolutions.config#unchecked" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="unchecked[Value](path:String)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]"></a><a id="unchecked[Value](String)(Config,ValueReader[Value]):Either[ValueFailure[Value],Value]"></a>
       <span class="permalink">
       <a href="../../cakesolutions/config/index.html#unchecked[Value](path:String)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]" title="Permalink">
@@ -747,9 +829,25 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
         <span class="name">unchecked</span><span class="tparams">[<span name="Value">Value</span>]</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reader">reader: <span class="extype" name="net.ceedubs.ficus.readers.ValueReader">ValueReader</span>[<span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Either">Either</span>[<a href="package$$ValueFailure.html" class="extype" name="cakesolutions.config.ValueFailure">ValueFailure</a>[<span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>], <span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>]</span>
       </span>
       
+      
+    </li><li name="cakesolutions.config#unchecked" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="unchecked[Value](path:cakesolutions.config.package.PathSpec)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]"></a><a id="unchecked[Value](PathSpec)(Config,ValueReader[Value]):Either[ValueFailure[Value],Value]"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#unchecked[Value](path:cakesolutions.config.package.PathSpec)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unchecked</span><span class="tparams">[<span name="Value">Value</span>]</span><span class="params">(<span name="path">path: <a href="package$$PathSpec.html" class="extype" name="cakesolutions.config.PathSpec">PathSpec</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reader">reader: <span class="extype" name="net.ceedubs.ficus.readers.ValueReader">ValueReader</span>[<span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Either">Either</span>[<a href="package$$ValueFailure.html" class="extype" name="cakesolutions.config.ValueFailure">ValueFailure</a>[<span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>], <span class="extype" name="cakesolutions.config.unchecked.Value">Value</span>]</span>
+      </span>
+      
       <p class="shortcomment cmt">Used to read in a value of type <code>Value</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Used to read in a value of type <code>Value</code>. Other than checking the values type, no other validation is performed.
 </p></div><dl class="paramcmts block"><dt class="tparam">Value</dt><dd class="cmt"><p>type we expect the parsed and checked config value to have</p></dd><dt class="param">path</dt><dd class="cmt"><p>Typesafe config path to the value we are validating</p></dd><dt class="param">config</dt><dd class="cmt"><p>the currently in scope config object that we use</p></dd><dt class="param">reader</dt><dd class="cmt"><p>Ficus <code>ValueReader</code> that we use for type checking the parsed config value</p></dd><dt>returns</dt><dd class="cmt"><p>either a <code>ValueFailure</code> or the parsed and *unchecked* <code>Value</code> instance</p></dd></dl></div>
-    </li><li name="cakesolutions.config#validate" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="cakesolutions.config#validate" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="validate[Value](path:String,failureReason:Throwable)(check:Value=&gt;Boolean)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]"></a><a id="validate[Value](String,Throwable)((Value)⇒Boolean)(Config,ValueReader[Value]):Either[ValueFailure[Value],Value]"></a>
       <span class="permalink">
       <a href="../../cakesolutions/config/index.html#validate[Value](path:String,failureReason:Throwable)(check:Value=&gt;Boolean)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]" title="Permalink">
@@ -762,6 +860,22 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
       </span>
       <span class="symbol">
         <span class="name">validate</span><span class="tparams">[<span name="Value">Value</span>]</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="failureReason">failureReason: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="params">(<span name="check">check: (<span class="extype" name="cakesolutions.config.validate.Value">Value</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reader">reader: <span class="extype" name="net.ceedubs.ficus.readers.ValueReader">ValueReader</span>[<span class="extype" name="cakesolutions.config.validate.Value">Value</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Either">Either</span>[<a href="package$$ValueFailure.html" class="extype" name="cakesolutions.config.ValueFailure">ValueFailure</a>[<span class="extype" name="cakesolutions.config.validate.Value">Value</span>], <span class="extype" name="cakesolutions.config.validate.Value">Value</span>]</span>
+      </span>
+      
+      
+    </li><li name="cakesolutions.config#validate" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="validate[Value](path:cakesolutions.config.package.PathSpec,failureReason:Throwable)(check:Value=&gt;Boolean)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]"></a><a id="validate[Value](PathSpec,Throwable)((Value)⇒Boolean)(Config,ValueReader[Value]):Either[ValueFailure[Value],Value]"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#validate[Value](path:cakesolutions.config.package.PathSpec,failureReason:Throwable)(check:Value=&gt;Boolean)(implicitconfig:com.typesafe.config.Config,implicitreader:net.ceedubs.ficus.readers.ValueReader[Value]):Either[cakesolutions.config.package.ValueFailure[Value],Value]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">validate</span><span class="tparams">[<span name="Value">Value</span>]</span><span class="params">(<span name="path">path: <a href="package$$PathSpec.html" class="extype" name="cakesolutions.config.PathSpec">PathSpec</a></span>, <span name="failureReason">failureReason: <span class="extype" name="scala.Throwable">Throwable</span></span>)</span><span class="params">(<span name="check">check: (<span class="extype" name="cakesolutions.config.validate.Value">Value</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="config">config: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reader">reader: <span class="extype" name="net.ceedubs.ficus.readers.ValueReader">ValueReader</span>[<span class="extype" name="cakesolutions.config.validate.Value">Value</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Either">Either</span>[<a href="package$$ValueFailure.html" class="extype" name="cakesolutions.config.ValueFailure">ValueFailure</a>[<span class="extype" name="cakesolutions.config.validate.Value">Value</span>], <span class="extype" name="cakesolutions.config.validate.Value">Value</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Used to read in a value of type <code>Value</code> and to then check that value using <code>check</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Used to read in a value of type <code>Value</code> and to then check that value using <code>check</code>. If <code>check</code> returns false,
@@ -835,6 +949,24 @@ then we fail with <code>failureReason</code>.
       <span class="symbol">
         <a title="" href="package$$NullValue$.html">
               <span class="name">NullValue</span>
+            </a><span class="result"> extends <span class="extype" name="scala.Exception">Exception</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      
+    </li><li name="cakesolutions.config.RequiredValueNotSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RequiredValueNotSet"></a><a id="RequiredValueNotSet:RequiredValueNotSet"></a>
+      <span class="permalink">
+      <a href="../../cakesolutions/config/index.html#RequiredValueNotSet" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="package$$RequiredValueNotSet$.html">
+              <span class="name">RequiredValueNotSet</span>
             </a><span class="result"> extends <span class="extype" name="scala.Exception">Exception</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
