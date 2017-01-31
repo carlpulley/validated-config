@@ -170,32 +170,35 @@ package object config extends FicusInstances {
   /**
    * Used to read in a value of type `Value`. Other than checking the values type, no other validation is performed.
    *
-   * @param path Typesafe config path to the value we are validating
+   * @param pathSpec Typesafe config path to the value we are validating
    * @param config the currently in scope config object that we use
    * @param reader Ficus `ValueReader` that we use for type checking the parsed config value
    * @tparam Value type we expect the parsed and checked config value to have
    * @return either a `ValueFailure` or the parsed and *unchecked* `Value` instance
    */
   def unchecked[Value](
-    path: PathSpec
+    pathSpec: PathSpec
   )(implicit config: Config,
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
-    Try(config.hasPath(path.value)) match {
+    Try(config.hasPath(pathSpec.value)) match {
       case Success(true) =>
-        checkedPath[Value](path).flatMap { path =>
-          Try(config.as[Value](path)) match {
-            case Success(value) =>
-              Right(value)
-            case Failure(exn) =>
-              Left(ValueFailure[Value](path, exn))
-          }
+        checkedPath[Value](pathSpec) match {
+          case Right(path) =>
+            Try(config.as[Value](path)) match {
+              case Success(value) =>
+                Right(value)
+              case Failure(exn) =>
+                Left(ValueFailure[Value](path, exn))
+            }
+          case Left(result) =>
+            Left(result)
         }
       case Success(false) =>
-        Left(ValueFailure[Value](path.value, NullValue))
+        Left(ValueFailure[Value](pathSpec.value, NullValue))
       // $COVERAGE-OFF$ Requires `hasPath` to throw
       case Failure(_) =>
-        Left(ValueFailure[Value](path.value, MissingValue))
+        Left(ValueFailure[Value](pathSpec.value, MissingValue))
       // $COVERAGE-ON$
     }
   }
@@ -212,7 +215,7 @@ package object config extends FicusInstances {
    * Used to read in a value of type `Value` and to then check that value using `check`. If `check` returns false,
    * then we fail with `failureReason`.
    *
-   * @param path Typesafe config path to the value we are validating
+   * @param pathSpec Typesafe config path to the value we are validating
    * @param failureReason if `check` fails, the [[Throwable]] instance we return
    * @param check predicate used to check the configuration value
    * @param config the currently in scope config object that we use
@@ -221,34 +224,37 @@ package object config extends FicusInstances {
    * @return either a `ValueFailure` or the parsed and checked `Value` instance
    */
   def validate[Value](
-    path: PathSpec,
+    pathSpec: PathSpec,
     failureReason: Throwable
   )(check: Value => Boolean
   )(implicit config: Config,
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
-    Try(config.hasPath(path.value)) match {
+    Try(config.hasPath(pathSpec.value)) match {
       case Success(true) =>
-        checkedPath[Value](path).flatMap { path =>
-          Try(config.as[Value](path)) match {
-            case Success(value) =>
-              Try(check(value)) match {
-                case Success(true) =>
-                  Right(value)
-                case Success(false) =>
-                  Left(ValueFailure[Value](path, failureReason))
-                case Failure(exn) =>
-                  Left(ValueFailure[Value](path, exn))
-              }
-            case Failure(exn) =>
-              Left(ValueFailure[Value](path, exn))
-          }
+        checkedPath[Value](pathSpec) match {
+          case Right(path) =>
+            Try(config.as[Value](path)) match {
+              case Success(value) =>
+                Try(check(value)) match {
+                  case Success(true) =>
+                    Right(value)
+                  case Success(false) =>
+                    Left(ValueFailure[Value](path, failureReason))
+                  case Failure(exn) =>
+                    Left(ValueFailure[Value](path, exn))
+                }
+              case Failure(exn) =>
+                Left(ValueFailure[Value](path, exn))
+            }
+          case Left(result) =>
+            Left(result)
         }
       case Success(false) =>
-        Left(ValueFailure[Value](path.value, NullValue))
+        Left(ValueFailure[Value](pathSpec.value, NullValue))
       // $COVERAGE-OFF$ Requires `hasPath` to throw
       case Failure(_) =>
-        Left(ValueFailure[Value](path.value, MissingValue))
+        Left(ValueFailure[Value](pathSpec.value, MissingValue))
       // $COVERAGE-ON$
     }
   }

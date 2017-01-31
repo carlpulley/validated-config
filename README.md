@@ -72,6 +72,20 @@ configuration path. In these cases we can use `unchecked`:
 unchecked[FiniteDuration]("test.nestedDuration")
 ```
 
+When we require a path to have a value set, then we model this using
+sentinal values. This is done to minimise conflicts with 3rd party
+libraries that may load `application.conf`. We achieve this using
+`required` as follows:
+```scala
+unchecked[FiniteDuration](required("test.nestedDuration"))
+```
+By default, it is assumed that the path `test.nestedDuration` will be
+set to the sentinal value `NOT_SET`. Should a different sentinal value
+be required (e.g. `UNDEFINED`), then we can do this as follows:
+```scala
+unchecked[FiniteDuration](required("test.nestedDuration", "UNDEFINED"))
+```
+
 ## Building Validated `Config` Instances
 
 Building validated configuration case class instances is performed using
@@ -127,3 +141,25 @@ follows:
 ```
 Internally, we use `scala.Either` for error signal management - however, `validateConfig` aggregates and materialises
 such errors as a `Try` instance.
+
+## Secure Validated Configuration
+
+Using abstract sealed case classes, we can validate configuration
+data and then ensure that the validated case class instances can
+not be faked (e.g. via copy constructors or uses of the apply method).
+
+If we want to do this, then the previous example's case classes could
+be rewritten as follows:
+```scala
+sealed abstract case class HttpConfig(host: String, port: Int)
+object HttpConfig {
+  private[secure] def apply(host: String, port: Int) =
+    new HttpConfig(host, port) {}
+}
+sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+object Settings {
+  private[secure] def apply(name: String, timeout: FiniteDuration, http: HttpConfig) =
+    new Settings(name, timeout, http) {}
+}
+```
+Here, package `secure` is responsible for loading and parsing our configuration files.
