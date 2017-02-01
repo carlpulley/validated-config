@@ -129,7 +129,7 @@ follows:
  validateConfig("application.conf") { implicit config =>
    build[Settings](
      validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-     validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
+     validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
      via("http") { implicit config =>
        build[HttpConfig](
          unchecked[String]("host"),
@@ -149,24 +149,45 @@ data and then ensure that the validated case class instances can
 not be faked (e.g. via copy constructors or uses of the apply method).
 
 If we want to do this, then the previous example's case classes could
-be rewritten as follows:
+be rewritten as say:
 ```scala
+package cakesolutions.config.secure
+
+import cakesolutions.config._
+
 sealed abstract case class HttpConfig(host: String, port: Int)
 object HttpConfig {
   private[secure] def apply(host: String, port: Int) =
     new HttpConfig(host, port) {}
 }
+
 sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
 object Settings {
   private[secure] def apply(name: String, timeout: FiniteDuration, http: HttpConfig) =
     new Settings(name, timeout, http) {}
 }
-```
-Here, package `secure` is responsible for loading and parsing our configuration files.
 
-As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc93f846835ed21c92d2) and discussed in 
-[Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of a sealed abstract case class
-ensures that constructors, copy constructors and companion apply methods are not created.
-Hence, the only way that instances of `HttpConfig` and `Settings` can be created is by the
-the package protected code in their respective companion objects - thus we ensure that all
-such validated configurations are compile time checked as being invariant!
+object LoadValidatedConfig {
+  lazy val value: Try[Settings] =
+    validateConfig("application.conf") { implicit config =>
+      build[Settings](
+        validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
+        validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
+        via("http") { implicit config =>
+          build[HttpConfig](
+            unchecked[String]("host"),
+            validate[Int]("port", ShouldBePositive)(_ > 0)
+          )
+        }
+      )
+    }
+}
+```
+Here, package `cakesolutions.config.secure` is responsible for loading and parsing our configuration files.
+
+As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc93f846835ed21c92d2) and discussed further in 
+[Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of an sealed abstract case class
+ensures that constructors, copy constructors and companion apply methods are not created 
+by the compiler. Hence, the only way that instances of `HttpConfig` and `Settings` can be
+created is via the the package protected code in their respective companion objects - and so
+we ensure that all such validated configurations are compile time checked as being invariant!
