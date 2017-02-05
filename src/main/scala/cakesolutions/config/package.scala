@@ -60,20 +60,24 @@ import scala.util.{Failure, Success, Try}
  */
 package object config extends FicusInstances {
   /**
-   * Ensures that the specified path has a value defined for it. This is achieved using a sentinal value: the path has
-   * the sentinal value if and only if it has not been set or assigned to.
-   *
-   * undefined sentinal value that indicates if this path value has been set or not (by default, this is the
-   *   string "NOT_SET")
-   */
-  /**
-   * TODO: document and implement required behaviour!!!
+   * Ensures that the specified path has a value defined for it. This may be achieved:
+   *   - at the Typesafe configuration file level: the path must exist and have a non-null value
+   *   - using a sentinal value: the path has the sentinal value if and only if it has not been set or assigned to.
    */
   sealed trait PathSpec {
     def value: String
   }
   final case class optional(value: String) extends PathSpec
-  final case class required(value: String, undefined: String = "NOT_SET") extends PathSpec
+  final case class required private (value: String, undefined: Option[String]) extends PathSpec
+  object required {
+    def apply(value: String): required = {
+      new required(value, None)
+    }
+
+    def apply(value: String, undefined: String): required = {
+      new required(value, Some(undefined))
+    }
+  }
 
   /**
    * General reasons for why a config value might fail to be validated by `validate`.
@@ -230,32 +234,23 @@ package object config extends FicusInstances {
   )(implicit config: Config,
     reader: ValueReader[Value]
   ): Either[ValueFailure[Value], Value] = {
-    Try(config.hasPath(pathSpec.value)) match {
-      case Success(true) =>
-        checkedPath[Value](pathSpec) match {
-          case Right(path) =>
-            Try(config.as[Value](path)) match {
-              case Success(value) =>
-                Try(check(value)) match {
-                  case Success(true) =>
-                    Right(value)
-                  case Success(false) =>
-                    Left(ValueFailure[Value](path, failureReason))
-                  case Failure(exn) =>
-                    Left(ValueFailure[Value](path, exn))
-                }
+    checkedPath[Value](pathSpec) match {
+      case Right(path) =>
+        Try(config.as[Value](path)) match {
+          case Success(value) =>
+            Try(check(value)) match {
+              case Success(true) =>
+                Right(value)
+              case Success(false) =>
+                Left(ValueFailure[Value](path, failureReason))
               case Failure(exn) =>
                 Left(ValueFailure[Value](path, exn))
             }
-          case Left(result) =>
-            Left(result)
+          case Failure(exn) =>
+            Left(ValueFailure[Value](path, exn))
         }
-      case Success(false) =>
-        Left(ValueFailure[Value](pathSpec.value, NullValue))
-      // $COVERAGE-OFF$ Requires `hasPath` to throw
-      case Failure(_) =>
-        Left(ValueFailure[Value](pathSpec.value, MissingValue))
-      // $COVERAGE-ON$
+      case Left(result) =>
+        Left(result)
     }
   }
 
@@ -276,7 +271,18 @@ package object config extends FicusInstances {
     path match {
       case optional(value) =>
         Right(value)
-      case required(value, undefined) =>
+      case required(value, None) =>
+        Try(config.hasPath(value)) match {
+          case Success(true) =>
+            Right(value)
+          case Success(false) =>
+            Left(ValueFailure[Value](path.value, RequiredValueNotSet))
+          // $COVERAGE-OFF$ Requires `hasPath` to throw
+          case Failure(exn) =>
+            Left(ValueFailure[Value](value, exn))
+          // $COVERAGE-ON$
+        }
+      case required(value, Some(undefined)) =>
         Try(config.getValue(value).unwrapped()) match {
           case actual @ Success(`undefined`) =>
             Left(ValueFailure[Value](path.value, RequiredValueNotSet))
