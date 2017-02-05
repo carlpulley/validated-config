@@ -72,16 +72,22 @@ configuration path. In these cases we can use `unchecked`:
 unchecked[FiniteDuration]("test.nestedDuration")
 ```
 
-When we require a path to have a value set, then we model this using
-sentinal values. This is done to minimise conflicts with 3rd party
-libraries that may load `application.conf`. We achieve this using
-`required` as follows:
+When we require a path to have a value set, then we have two possible
+options:
+- check if the configuration path exists and is defined
+- or, use a sentinal value and validate the path has a differing value.
+
+When configuration paths are specific to your application, then the first
+of these approaches is suitable to use. However, if you are overriding the
+values in 3rd party libraries and require a value to be set, it is necessary
+to use sentinal values.
+
+In the first case, we use `required` as follows:
 ```scala
 unchecked[FiniteDuration](required("test.nestedDuration"))
 ```
-By default, it is assumed that the path `test.nestedDuration` will be
-set to the sentinal value `NOT_SET`. Should a different sentinal value
-be required (e.g. `UNDEFINED`), then we can do this as follows:
+When using `required` with sentinal values, it is necessary to specify what
+the expected sentinal value is as follows:
 ```scala
 unchecked[FiniteDuration](required("test.nestedDuration", "UNDEFINED"))
 ```
