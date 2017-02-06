@@ -157,24 +157,37 @@ not be faked (e.g. via copy constructors or uses of the apply method).
 If we want to do this, then the previous example's case classes could
 be rewritten as say:
 ```scala
-package cakesolutions.config.secure
+package cakesolutions.example
 
 import cakesolutions.config._
-
-sealed abstract case class HttpConfig(host: String, port: Int)
-object HttpConfig {
-  private[secure] def apply(host: String, port: Int) =
-    new HttpConfig(host, port) {}
-}
-
-sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
-object Settings {
-  private[secure] def apply(name: String, timeout: FiniteDuration, http: HttpConfig) =
-    new Settings(name, timeout, http) {}
-}
+import scala.concurrent.duration._
+import scala.util.Try
 
 object LoadValidatedConfig {
-  lazy val value: Try[Settings] =
+  sealed abstract case class HttpConfig(host: String, port: Int)
+  sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+  
+  // Following allows Shapeless to create instances of our sealed abstract case classes
+  implicit val genHttpConfig: Generic[HttpConfig] = new Generic[HttpConfig] {
+    type Repr = String :: Int :: HNil
+ 
+    def to(t: HttpConfig): Repr =
+      t.host :: t.port :: HNil
+ 
+    def from(r: Repr): HttpConfig =
+      new HttpConfig(r(0), r(1)) {}
+  }
+  implicit val genSettings: Generic[Settings] = new Generic[Settings] {
+    type Repr = String :: FiniteDuration :: HttpConfig :: HNil
+ 
+    def to(t: Settings): Repr =
+      t.name :: t.timeout :: t.http :: HNil
+ 
+    def from(r: Repr): Settings =
+      new Settings(r(0), r(1), r(2)) {}
+  }
+
+  def apply(): Try[Settings] =
     validateConfig("application.conf") { implicit config =>
       build[Settings](
         validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
@@ -189,7 +202,7 @@ object LoadValidatedConfig {
     }
 }
 ```
-Here, package `cakesolutions.config.secure` is responsible for loading and parsing our configuration files.
+Here, package `cakesolutions.example` is responsible for loading and parsing our configuration files.
 
 As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc93f846835ed21c92d2) and discussed further in 
 [Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of an sealed abstract case class
