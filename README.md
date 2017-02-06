@@ -208,5 +208,5 @@ As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc
 [Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of an sealed abstract case class
 ensures that constructors, copy constructors and companion apply methods are not created 
 by the compiler. Hence, the only way that instances of `HttpConfig` and `Settings` can be
-created is via the the package protected code in their respective companion objects - and so
+created is via the the package protected code in the respective implicits - and so
 we ensure that all such validated configurations are compile time checked as being invariant!
