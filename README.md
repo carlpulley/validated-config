@@ -168,7 +168,7 @@ object LoadValidatedConfig {
   sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
   
   // Following allows Shapeless to create instances of our sealed abstract case classes
-  implicit val genHttpConfig: Generic[HttpConfig] = new Generic[HttpConfig] {
+  private implicit val genHttpConfig: Generic[HttpConfig] = new Generic[HttpConfig] {
     type Repr = String :: Int :: HNil
  
     def to(t: HttpConfig): Repr =
@@ -177,7 +177,7 @@ object LoadValidatedConfig {
     def from(r: Repr): HttpConfig =
       new HttpConfig(r(0), r(1)) {}
   }
-  implicit val genSettings: Generic[Settings] = new Generic[Settings] {
+  private implicit val genSettings: Generic[Settings] = new Generic[Settings] {
     type Repr = String :: FiniteDuration :: HttpConfig :: HNil
  
     def to(t: Settings): Repr =
