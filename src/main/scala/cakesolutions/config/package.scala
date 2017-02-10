@@ -6,8 +6,9 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigRes
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
 import shapeless._
+import shapeless.syntax.std.tuple._
 
-import scala.language.implicitConversions
+import scala.language.{implicitConversions, reflectiveCalls}
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -102,7 +103,9 @@ package object config extends FicusInstances {
   final case class ValueFailure[Value](path: String, reason: Throwable) extends ValueError
 
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
-  implicit def innerConfigValue[ConfigValue](config: Either[ConfigError, ConfigValue]): Either[ValueError, ConfigValue] = {
+  implicit def innerConfigValue[ConfigValue](
+    config: Either[ConfigError, ConfigValue]
+  ): Either[ValueError, ConfigValue] = {
     config.left.map(NestedConfigError)
   }
 
@@ -120,7 +123,11 @@ package object config extends FicusInstances {
     configFile: String
   )(check: Config => Either[ConfigError, ValidConfig]
   ): Try[ValidConfig] = {
-    Try(ConfigFactory.load(configFile, ConfigParseOptions.defaults().setAllowMissing(false), ConfigResolveOptions.defaults())) match {
+    Try(ConfigFactory.load(
+      configFile,
+      ConfigParseOptions.defaults().setAllowMissing(false),
+      ConfigResolveOptions.defaults()
+    )) match {
       case Success(config) =>
         check(config).fold(Failure(_), Success(_))
       case Failure(exn) =>
@@ -139,17 +146,24 @@ package object config extends FicusInstances {
    * @tparam ValidConfig the case class type that we are to construct
    * @return either a [[ValueError]] or the validated case class `ValidConfig`
    */
-  def via[ValidConfig](path: String)(inner: Config => Either[ConfigError, ValidConfig])(implicit config: Config): Either[ValueError, ValidConfig] = {
+  def via[ValidConfig](
+    path: String
+  )(inner: Config => Either[ConfigError, ValidConfig]
+  )(implicit config: Config): Either[ValueError, ValidConfig] = {
     innerConfigValue(inner(config.getConfig(path))).left.map(addBasePathToValueErrors(path, _))
   }
 
   /**
-   * Constructs and instance of the case class `ValidConfig` from a list of validated parameter values.
+   * Constructs an instance of the case class `ValidConfig` from a list of validated parameter values. This function
+   * is viewed as being unsafe as it may throw runtime class cast exceptions.
    *
-   * @param validatedParams list of validated case class parameters (listed in the order they are declared in the case class)
+   * @param validatedParams list of validated case class parameters (listed in the order they are declared in the case
+   *   class)
    * @tparam ValidConfig the case class type that we are to construct
    * @return either a list of `ValueErrors` (wrapped in a [[ConfigError]]) or the validated case class `ValidConfig`
    */
+  // TODO: rename as buildUnsafe
+  @throws[ClassCastException]
   def build[ValidConfig](
     validatedParams: Either[ValueError, Any]*
   )(implicit gen: Generic[ValidConfig]
