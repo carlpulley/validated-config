@@ -4,7 +4,7 @@ import Dependencies._
 
 name := "validated-config"
 
-version := "0.0.3-SNAPSHOT"
+version := "0.1.0-SNAPSHOT"
 
 CommonProject.settings
 
