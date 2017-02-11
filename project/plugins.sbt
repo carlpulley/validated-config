@@ -1,5 +1,7 @@
 // Copyright 2016 Carl Pulley
 
+scalacOptions ++= Seq("-deprecation", "-Xlint", "-unchecked", "-language:_")
+
 resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
 resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
 
