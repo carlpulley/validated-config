@@ -4,8 +4,6 @@ import Dependencies._
 
 name := "validated-config"
 
-version := "0.1.0"
-
 CommonProject.settings
 
 ScalaDoc.settings
