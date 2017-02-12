@@ -189,7 +189,7 @@ class ValidatedConfigTest extends FreeSpec {
 
       "validated building" in {
         val testConfig1 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             validate[String]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
             validate[Double]("nestedVal", GenericTestFailure)(_ => true),
@@ -203,7 +203,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(duration == 4.hours)
         }
         val testConfig2 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
             validate[Double](required("nestedVal", "NOT_SET"), GenericTestFailure)(_ => true),
@@ -217,7 +217,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig3 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int](required("context.valueInt", "NOT_SET"), GenericTestFailure)(_ => true),
             validate[Double]("bad-path.nestedVal", GenericTestFailure)(_ => true),
@@ -231,7 +231,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig4 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
             validate[Double]("nestedVal", GenericTestFailure)(_ => true),
@@ -245,7 +245,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig5 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             validate[Int]("context.valueStr", GenericTestFailure)(_ => true),
             validate[Int]("context.valueInt", GenericTestFailure)(_ => true),
             validate[Double]("nestedVal", GenericTestFailure)(_ => true),
@@ -262,7 +262,7 @@ class ValidatedConfigTest extends FreeSpec {
 
       "unchecked building" in {
         val testConfig1 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             unchecked[String]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
             unchecked[Double]("nestedVal"),
@@ -276,7 +276,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(duration == 4.hours)
         }
         val testConfig2 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
             unchecked[Double]("nestedVal"),
@@ -290,7 +290,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig3 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
             unchecked[Double]("bad-path.nestedVal"),
@@ -304,7 +304,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig4 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
             unchecked[Double]("nestedVal"),
@@ -318,7 +318,7 @@ class ValidatedConfigTest extends FreeSpec {
             assert(true)
         }
         val testConfig5 = via("test") { implicit config =>
-          build[TestSettings](
+          buildUnsafe[TestSettings](
             unchecked[Int]("context.valueStr"),
             unchecked[Int]("context.valueInt"),
             unchecked[Double]("nestedVal"),
@@ -339,11 +339,11 @@ class ValidatedConfigTest extends FreeSpec {
     "invalid files fail to load" in {
       val validatedConfig =
         validateConfig("non-existent.conf") { implicit config =>
-          build[Settings](
+          buildUnsafe[Settings](
             validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
             via("http") { implicit config =>
-              build[HttpConfig](
+              buildUnsafe[HttpConfig](
                 unchecked[String]("host"),
                 validate[Int]("port", ShouldBePositive)(_ > 0)
               )
@@ -360,11 +360,11 @@ class ValidatedConfigTest extends FreeSpec {
     "files referencing non-existent (required) includes fail to load" in {
       val validatedConfig =
         validateConfig("invalid.conf") { implicit config =>
-          build[Settings](
+          buildUnsafe[Settings](
             validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
             via("http") { implicit config =>
-              build[HttpConfig](
+              buildUnsafe[HttpConfig](
                 unchecked[String]("host"),
                 validate[Int]("port", ShouldBePositive)(_ > 0)
               )
@@ -383,7 +383,7 @@ class ValidatedConfigTest extends FreeSpec {
 
       val validatedConfig =
         validateConfig("http.conf") { implicit config =>
-          build[HttpConfig](
+          buildUnsafe[HttpConfig](
             unchecked[String]("http.host"),
             validate[Int]("http.port", NotAHttpPort)(_ != 80)
           )
@@ -395,11 +395,11 @@ class ValidatedConfigTest extends FreeSpec {
     "valid file but required values not set" in {
       val validatedConfig =
         validateConfig("application.conf") { implicit config =>
-          build[Settings](
+          buildUnsafe[Settings](
             validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
             validate[FiniteDuration](required("http.heartbeat", "NOT_SET"), ShouldNotBeNegative)(_ >= 0.seconds),
             via("http") { implicit config =>
-              build[HttpConfig](
+              buildUnsafe[HttpConfig](
                 unchecked[String]("host"),
                 validate[Int]("port", ShouldBePositive)(_ > 0)
               )
@@ -433,11 +433,11 @@ class ValidatedConfigTest extends FreeSpec {
       implicit val config = envMapping.withFallback(ConfigFactory.parseResourcesAnySyntax("application.conf")).resolve()
 
       val validatedConfig =
-        build[Settings](
+        buildUnsafe[Settings](
           validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
           validate[FiniteDuration](required("http.heartbeat", "NOT_SET"), ShouldNotBeNegative)(_ >= 0.seconds),
           via("http") { implicit config =>
-            build[HttpConfig](
+            buildUnsafe[HttpConfig](
               unchecked[String]("host"),
               validate[Int]("port", ShouldBePositive)(_ > 0)
             )
@@ -454,11 +454,11 @@ class ValidatedConfigTest extends FreeSpec {
     "using system environment variable overrides" in {
       val validatedConfig =
         validateConfig("application.conf") { implicit config =>
-          build[Settings](
+          buildUnsafe[Settings](
             validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds),
             via("http") { implicit config =>
-              build[HttpConfig](
+              buildUnsafe[HttpConfig](
                 unchecked[String]("host"),
                 validate[Int]("port", ShouldBePositive)(_ > 0)
               )

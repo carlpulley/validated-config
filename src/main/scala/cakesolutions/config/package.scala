@@ -6,6 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigRes
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
 import shapeless._
+import shapeless.ops.hlist.{Mapped, RightFolder}
 import shapeless.syntax.std.tuple._
 
 import scala.language.{implicitConversions, reflectiveCalls}
@@ -60,48 +61,6 @@ import scala.util.{Failure, Success, Try}
  * }}}
  */
 package object config extends FicusInstances {
-  /**
-   * Ensures that the specified path has a value defined for it. This may be achieved:
-   *   - at the Typesafe configuration file level: the path must exist and have a non-null value
-   *   - using a sentinal value: the path has the sentinal value if and only if it has not been set or assigned to.
-   */
-  sealed trait PathSpec {
-    def value: String
-  }
-  final case class optional(value: String) extends PathSpec
-  final case class required private (value: String, undefined: Option[String]) extends PathSpec
-  object required {
-    def apply(value: String): required = {
-      new required(value, None)
-    }
-
-    def apply(value: String, undefined: String): required = {
-      new required(value, Some(undefined))
-    }
-  }
-
-  /**
-   * General reasons for why a config value might fail to be validated by `validate`.
-   */
-  case object MissingValue extends Exception
-  case object NullValue extends Exception
-  case object RequiredValueNotSet extends Exception
-  final case class ConfigError(errors: ValueError*) extends Exception {
-    override def toString: String =
-      s"ConfigError(${errors.map(_.toString).mkString(",")})"
-  }
-  final case class FileNotFound(file: String, reason: Throwable) extends Exception {
-    override def toString: String =
-      s"FileNotFound($file,$reason)"
-  }
-
-  /**
-   * Reasons why we might fail to parse a value from the config file
-   */
-  sealed trait ValueError
-  final case class NestedConfigError(config: ConfigError) extends ValueError
-  final case class ValueFailure[Value](path: String, reason: Throwable) extends ValueError
-
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
   implicit def innerConfigValue[ConfigValue](
     config: Either[ConfigError, ConfigValue]
@@ -162,9 +121,8 @@ package object config extends FicusInstances {
    * @tparam ValidConfig the case class type that we are to construct
    * @return either a list of `ValueErrors` (wrapped in a [[ConfigError]]) or the validated case class `ValidConfig`
    */
-  // TODO: rename as buildUnsafe
   @throws[ClassCastException]
-  def build[ValidConfig](
+  def buildUnsafe[ValidConfig](
     validatedParams: Either[ValueError, Any]*
   )(implicit gen: Generic[ValidConfig]
   ): Either[ConfigError, ValidConfig] = {
@@ -182,6 +140,54 @@ package object config extends FicusInstances {
         Left(ConfigError(failures: _*))
     }
   }
+
+  /**
+   * Constructs an instance of the case class `ValidConfig` from a list of validated parameter values. Unlike
+   * `buildUnsafe`, this function does not throw runtime class cast exceptions.
+   *
+   * @param validatedParams HList of validated case class parameters (listed in the order they are declared in the case
+   *   class)
+   * @tparam ValidConfig the case class type that we are to construct
+   * @return either a list of `ValueErrors` (wrapped in a [[ConfigError]]) or the validated case class `ValidConfig`
+   */
+  def buildSafe[ValidConfig](
+    validatedParams: Mapped[Generic[ValidConfig]#Repr, ({ type M[X] = Either[ValueError, X] })#M]#Out
+  )(implicit gen: Generic[ValidConfig],
+    folder: ??? // FIXME:
+  ): Either[ConfigError, ValidConfig] = {
+    type BuildState = (List[ValueError], HList)
+    object collectFailuresHList extends Poly2 {
+      implicit def leftErrorCase[Value]: Case.Aux[Left[ValueError, Value], BuildState, BuildState] = {
+        at {
+          case (Left(error), (failures, result)) =>
+            (error +: failures, result)
+        }
+      }
+      implicit def rightErrorCase[Value]: Case.Aux[Right[ValueError, Value], BuildState, BuildState] = {
+        at {
+          case (Right(value), (failures, result)) =>
+            (failures, value :: result)
+        }
+      }
+    }
+    implicit val folder: RightFolder[
+        Mapped[gen.Repr, ({ type M[X] = Either[ValueError,X] })#M]#Out,
+        BuildState,
+        collectFailuresHList.type
+      ] = ??? // TODO:
+    val failuresHList: (List[ValueError], HList) =
+      validatedParams
+        .foldRight[BuildState]((Nil, HNil))(collectFailuresHList)
+
+    failuresHList match {
+      case (Nil, result: (gen.Repr @unchecked)) =>
+        Right(gen.from(result))
+      case (failures, _) =>
+        Left(ConfigError(failures: _*))
+    }
+  }
+
+  // TODO: introduce a macro(?) named `build` that avoids `productElements` boiler plate
 
   // Parameter value checkers
 
