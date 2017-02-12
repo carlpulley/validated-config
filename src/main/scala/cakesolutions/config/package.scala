@@ -60,48 +60,6 @@ import scala.util.{Failure, Success, Try}
  * }}}
  */
 package object config extends FicusInstances {
-  /**
-   * Ensures that the specified path has a value defined for it. This may be achieved:
-   *   - at the Typesafe configuration file level: the path must exist and have a non-null value
-   *   - using a sentinal value: the path has the sentinal value if and only if it has not been set or assigned to.
-   */
-  sealed trait PathSpec {
-    def value: String
-  }
-  final case class optional(value: String) extends PathSpec
-  final case class required private (value: String, undefined: Option[String]) extends PathSpec
-  object required {
-    def apply(value: String): required = {
-      new required(value, None)
-    }
-
-    def apply(value: String, undefined: String): required = {
-      new required(value, Some(undefined))
-    }
-  }
-
-  /**
-   * General reasons for why a config value might fail to be validated by `validate`.
-   */
-  case object MissingValue extends Exception
-  case object NullValue extends Exception
-  case object RequiredValueNotSet extends Exception
-  final case class ConfigError(errors: ValueError*) extends Exception {
-    override def toString: String =
-      s"ConfigError(${errors.map(_.toString).mkString(",")})"
-  }
-  final case class FileNotFound(file: String, reason: Throwable) extends Exception {
-    override def toString: String =
-      s"FileNotFound($file,$reason)"
-  }
-
-  /**
-   * Reasons why we might fail to parse a value from the config file
-   */
-  sealed trait ValueError
-  final case class NestedConfigError(config: ConfigError) extends ValueError
-  final case class ValueFailure[Value](path: String, reason: Throwable) extends ValueError
-
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
   implicit def innerConfigValue[ConfigValue](
     config: Either[ConfigError, ConfigValue]

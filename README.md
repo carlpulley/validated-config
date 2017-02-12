@@ -5,8 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=0.1.1)](http://travis-ci.org/carlpulley/validated-config)
-[![Maven Central](https://img.shields.io/badge/maven--central-v0.1.1-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C0.1.1%7Cjar)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=0.1.2)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/badge/maven--central-v0.1.2-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C0.1.2%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -17,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.1.1"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "0.1.2"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -206,5 +206,5 @@ As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc
 [Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of an sealed abstract case class
 ensures that constructors, copy constructors and companion apply methods are not created 
 by the compiler. Hence, the only way that instances of `HttpConfig` and `Settings` can be
-created is via the the package protected code in the respective implicits - and so
+created is via the package protected code in the respective implicits - and so
 we ensure that all such validated configurations are compile time checked as being invariant!
