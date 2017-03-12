@@ -174,9 +174,9 @@ object LoadValidatedConfig {
         via[HttpConfig]("http") { implicit config =>
           (unchecked[String]("host") |@|
             validate[Int]("port", ShouldBePositive)(_ > 0)
-          ).map { case (host, port) => new HttpConfig(host, port) {} }
+          ).map(new HttpConfig(_, _) {})
         }
-      ).map { case (name, timeout, http) => new Settings(name, timeout, http) {} }
+      ).map(new Settings(_, _, _) {})
     }
 }
 ```
