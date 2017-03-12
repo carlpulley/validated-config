@@ -454,8 +454,8 @@ class ValidatedConfigTest extends FreeSpec {
           |  AKKA_BIND_HOST = google.co.uk
           |  AKKA_BIND_PORT = 123
           |
-          |  HTTP_ADDR = 192.168.99.100
-          |  HTTP_PORT = 5678
+          |  optional.HTTP_ADDR = 192.168.99.100
+          |  optional.HTTP_PORT = 5678
           |
           |  required.HEARTBEAT = 20s
           |}

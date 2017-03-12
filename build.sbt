@@ -17,6 +17,7 @@ resolvers += Resolver.jcenterRepo
 libraryDependencies ++= Seq(
   cats,
   ficus,
+  refined,
   scalatest % Test,
   typesafeConfig
 )
