@@ -4,6 +4,8 @@ package cakesolutions
 
 import cats.data.{NonEmptyList => NEL, Validated}
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigResolveOptions}
+import eu.timepit.refined._
+import eu.timepit.refined.api.{Validate, Refined}
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
 
@@ -60,6 +62,15 @@ import scala.util.{Failure, Success, Try}
  */
 package object config extends FicusInstances {
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
+
+  implicit def toRefinementType[Base, Refinement](
+    implicit reader: ValueReader[Base],
+    witness: Validate[Base, Refinement]
+  ): ValueReader[Base Refined Refinement] = new ValueReader[Base Refined Refinement] {
+    override def read(config: Config, path: String): Base Refined Refinement = {
+      refineV[Refinement](config.as[Base](path)).right.get
+    }
+  }
 
   // Configuration file loader
 
