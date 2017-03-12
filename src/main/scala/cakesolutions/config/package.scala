@@ -2,11 +2,10 @@
 
 package cakesolutions
 
+import cats.data.{NonEmptyList => NEL, Validated}
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigResolveOptions}
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
-import shapeless._
-import shapeless.syntax.std.tuple._
 
 import scala.language.{implicitConversions, reflectiveCalls}
 import scala.util.{Failure, Success, Try}
@@ -61,11 +60,6 @@ import scala.util.{Failure, Success, Try}
  */
 package object config extends FicusInstances {
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
-  implicit def innerConfigValue[ConfigValue](
-    config: Either[ConfigError, ConfigValue]
-  ): Either[ValueError, ConfigValue] = {
-    config.left.map(NestedConfigError)
-  }
 
   // Configuration file loader
 
@@ -79,17 +73,17 @@ package object config extends FicusInstances {
    */
   def validateConfig[ValidConfig](
     configFile: String
-  )(check: Config => Either[ConfigError, ValidConfig]
-  ): Try[ValidConfig] = {
+  )(check: Config => Validated[NEL[ValueError], ValidConfig]
+  ): Validated[ConfigError, ValidConfig] = {
     Try(ConfigFactory.load(
       configFile,
       ConfigParseOptions.defaults().setAllowMissing(false),
       ConfigResolveOptions.defaults()
     )) match {
       case Success(config) =>
-        check(config).fold(Failure(_), Success(_))
+        check(config).leftMap(errors => ValueErrors(errors.toList: _*))
       case Failure(exn) =>
-        Failure(FileNotFound(configFile, exn))
+        Validated.invalid(FileNotFound(configFile, exn))
     }
   }
 
@@ -106,38 +100,13 @@ package object config extends FicusInstances {
    */
   def via[ValidConfig](
     path: String
-  )(inner: Config => Either[ConfigError, ValidConfig]
-  )(implicit config: Config): Either[ValueError, ValidConfig] = {
-    innerConfigValue(inner(config.getConfig(path))).left.map(addBasePathToValueErrors(path, _))
-  }
-
-  /**
-   * Constructs an instance of the case class `ValidConfig` from a list of validated parameter values. This function
-   * is viewed as being unsafe as it may throw runtime class cast exceptions.
-   *
-   * @param validatedParams list of validated case class parameters (listed in the order they are declared in the case
-   *   class)
-   * @tparam ValidConfig the case class type that we are to construct
-   * @return either a list of `ValueErrors` (wrapped in a [[ConfigError]]) or the validated case class `ValidConfig`
-   */
-  // TODO: rename as buildUnsafe
-  @throws[ClassCastException]
-  def build[ValidConfig](
-    validatedParams: Either[ValueError, Any]*
-  )(implicit gen: Generic[ValidConfig]
-  ): Either[ConfigError, ValidConfig] = {
-    val failuresHList = validatedParams.foldRight[(List[ValueError], HList)]((Nil, HNil)) {
-      case (Left(error), (failures, result)) =>
-        (error +: failures, result)
-      case (Right(value), (failures, result)) =>
-        (failures, value :: result)
-    }
-
-    failuresHList match {
-      case (Nil, result: (gen.Repr @unchecked)) =>
-        Right(gen.from(result))
-      case (failures, _) =>
-        Left(ConfigError(failures: _*))
+  )(inner: Config => Validated[NEL[ValueFailure], ValidConfig]
+  )(implicit config: Config): Validated[NEL[ValueFailure], ValidConfig] = {
+    inner(config.getConfig(path)) match {
+      case Validated.Valid(value) =>
+        Validated.valid(value)
+      case Validated.Invalid(errors) =>
+        Validated.invalid(errors.map { case ValueFailure(location, reason) => ValueFailure(s"$path.$location", reason) })
     }
   }
 
@@ -156,25 +125,25 @@ package object config extends FicusInstances {
     pathSpec: PathSpec
   )(implicit config: Config,
     reader: ValueReader[Value]
-  ): Either[ValueFailure[Value], Value] = {
+  ): Validated[NEL[ValueFailure], Value] = {
     Try(config.hasPath(pathSpec.value)) match {
       case Success(true) =>
         checkedPath[Value](pathSpec) match {
-          case Right(path) =>
+          case Validated.Valid(path) =>
             Try(config.as[Value](path)) match {
               case Success(value) =>
-                Right(value)
+                Validated.valid(value)
               case Failure(exn) =>
-                Left(ValueFailure[Value](path, exn))
+                Validated.invalid(NEL.of(ValueFailure(path, exn)))
             }
-          case Left(result) =>
-            Left(result)
+          case Validated.Invalid(result) =>
+            Validated.invalid(NEL.of(result))
         }
       case Success(false) =>
-        Left(ValueFailure[Value](pathSpec.value, NullValue))
+        Validated.invalid(NEL.of(ValueFailure(pathSpec.value, NullValue)))
       // $COVERAGE-OFF$ Requires `hasPath` to throw
       case Failure(_) =>
-        Left(ValueFailure[Value](pathSpec.value, MissingValue))
+        Validated.invalid(NEL.of(ValueFailure(pathSpec.value, MissingValue)))
       // $COVERAGE-ON$
     }
   }
@@ -183,7 +152,7 @@ package object config extends FicusInstances {
     path: String
   )(implicit config: Config,
     reader: ValueReader[Value]
-  ): Either[ValueFailure[Value], Value] = {
+  ): Validated[NEL[ValueFailure], Value] = {
     unchecked[Value](optional(path))(config, reader)
   }
 
@@ -205,24 +174,24 @@ package object config extends FicusInstances {
   )(check: Value => Boolean
   )(implicit config: Config,
     reader: ValueReader[Value]
-  ): Either[ValueFailure[Value], Value] = {
+  ): Validated[NEL[ValueFailure], Value] = {
     checkedPath[Value](pathSpec) match {
-      case Right(path) =>
+      case Validated.Valid(path) =>
         Try(config.as[Value](path)) match {
           case Success(value) =>
             Try(check(value)) match {
               case Success(true) =>
-                Right(value)
+                Validated.valid(value)
               case Success(false) =>
-                Left(ValueFailure[Value](path, failureReason))
+                Validated.invalid(NEL.of(ValueFailure(path, failureReason)))
               case Failure(exn) =>
-                Left(ValueFailure[Value](path, exn))
+                Validated.invalid(NEL.of(ValueFailure(path, exn)))
             }
           case Failure(exn) =>
-            Left(ValueFailure[Value](path, exn))
+            Validated.invalid(NEL.of(ValueFailure(path, exn)))
         }
-      case Left(result) =>
-        Left(result)
+      case Validated.Invalid(result) =>
+        Validated.invalid(NEL.of(result))
     }
   }
 
@@ -232,46 +201,39 @@ package object config extends FicusInstances {
   )(check: Value => Boolean
   )(implicit config: Config,
     reader: ValueReader[Value]
-  ): Either[ValueFailure[Value], Value] = {
+  ): Validated[NEL[ValueFailure], Value] = {
     validate[Value](optional(path), failureReason)(check)(config, reader)
   }
 
   private def checkedPath[Value](
     path: PathSpec
   )(implicit config: Config
-  ): Either[ValueFailure[Value], String] = {
+  ): Validated[ValueFailure, String] = {
     path match {
       case optional(value) =>
-        Right(value)
+        Validated.valid(value)
       case required(value, None) =>
         Try(config.hasPath(value)) match {
           case Success(true) =>
-            Right(value)
+            Validated.valid(value)
           case Success(false) =>
-            Left(ValueFailure[Value](path.value, RequiredValueNotSet))
+            Validated.invalid(ValueFailure(path.value, RequiredValueNotSet))
           // $COVERAGE-OFF$ Requires `hasPath` to throw
           case Failure(exn) =>
-            Left(ValueFailure[Value](value, exn))
+            Validated.invalid(ValueFailure(value, exn))
           // $COVERAGE-ON$
         }
       case required(value, Some(undefined)) =>
         Try(config.getValue(value).unwrapped()) match {
           case actual @ Success(`undefined`) =>
-            Left(ValueFailure[Value](path.value, RequiredValueNotSet))
+            Validated.invalid(ValueFailure(path.value, RequiredValueNotSet))
           case Success(actual) =>
-            Right(value)
+            Validated.valid(value)
           // $COVERAGE-OFF$ Requires `getValue` or `unwrapped` to throw
           case Failure(exn) =>
-            Left(ValueFailure[Value](value, exn))
+            Validated.invalid(ValueFailure(value, exn))
           // $COVERAGE-ON$
         }
     }
-  }
-
-  private def addBasePathToValueErrors(base: String, error: ValueError): ValueError = error match {
-    case NestedConfigError(ConfigError(errors @ _*)) =>
-      NestedConfigError(ConfigError(errors.map(addBasePathToValueErrors(base, _)): _*))
-    case ValueFailure(path, reason) =>
-      ValueFailure(s"$base.$path", reason)
   }
 }
