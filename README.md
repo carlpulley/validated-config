@@ -5,8 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.0.0-SNAPSHOT)](http://travis-ci.org/carlpulley/validated-config)
-[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.0-SNAPSHOT-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.0.0-SNAPSHOT%7Cjar)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.0.0)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.0-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.0.0%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -17,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.0.0-SNAPSHOT"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.0.0"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -54,8 +54,8 @@ case object ShouldBeAPercentageValue extends Exception
 validate[Double]("test.nestedVal", ShouldBeAPercentageValue)(n => 0 <= n && n <= 100)
 ```
 If the configuration value at path `test.nestedVal` fails to pass the
-percentage bounds check, then `Left(ShouldBeAPercentageValue)` is
-returned.
+percentage bounds check, then `Validated.Invalid(NonEmptyList.of(ShouldBeAPercentageValue))` is
+returned. Here, we are using the [cats](https://github.com/typelevel/cats) `Validated` data type.
 
 Likewise, we can enforce that all values in the array at the path
 `test.context.valueStrList` match the regular expression pattern
@@ -75,11 +75,11 @@ unchecked[FiniteDuration]("test.nestedDuration")
 When we require a path to have a value set, then we have two possible
 options:
 - check if the configuration path exists and is defined
-- or, use a sentinal value and validate the path has a differing value.
+- or, use a [sentinal value](https://en.wikipedia.org/wiki/Sentinel_value) and validate that the path has a differing value.
 
 When configuration paths are specific to your application, then the first
 of these approaches is suitable to use. However, if you are overriding the
-values in 3rd party libraries and require a value to be set, it is necessary
+values in 3rd party libraries and **require** a value to be set, then it is necessary
 to use sentinal values.
 
 In the first case, we use `required` as follows:
@@ -95,12 +95,12 @@ unchecked[FiniteDuration](required("test.nestedDuration", "UNDEFINED"))
 ## Building Validated `Config` Instances
 
 Building validated configuration case class instances is performed using
-the methods `via` and `build`. `via` allows the currently in-scope
-implicit `Config` instance to be restricted to a specified path. `build`
-constructs the case class specified in its type constraint. To do this,
-`build` takes a list of arguments that should be the results of either
+the methods `via` and `map`. `via` allows the currently in-scope
+implicit `Config` instance to be restricted to a specified path. `map`
+can be used to construct the case class instance from a product of `Validated.Valid` values. To do this,
+`map` takes a validated tuple of arguments that should be the results of either
 building inner validated case class instances or from using the
-`validate` or `unchecked` methods to validate values at a given path.
+`validate` and `unchecked` methods to validate values at a given path.
 
 ## Parsing Custom Configuration Values
 
@@ -132,21 +132,19 @@ http {
 then we can generate a validated `Settings` case class instance as
 follows:
 ```scala
- validateConfig("application.conf") { implicit config =>
-   build[Settings](
-     validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-     validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
-     via("http") { implicit config =>
-       build[HttpConfig](
-         unchecked[String]("host"),
+ validateConfig[Settings]("application.conf") { implicit config =>
+   (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+     validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
+     via[HttpConfig]("http") { implicit config =>
+       (unchecked[String]("host") |@|
          validate[Int]("port", ShouldBePositive)(_ > 0)
-       )
+       ).map(HttpConfig(_, _))
      }
-   )
+   ).map(Settings(_, _, _))
  }
 ```
-Internally, we use `scala.Either` for error signal management - however, `validateConfig` aggregates and materialises
-such errors as a `Try` instance.
+Internally, we use `NonEmptyList[ValueError]` for error signal management - however, `validateConfig` aggregates and materialises
+such errors as a `ConfigError` instance.
 
 ## Secure Validated Configuration
 
@@ -160,43 +158,25 @@ be rewritten as say:
 package cakesolutions.example
 
 import cakesolutions.config._
+import cats.data.Validated
+import cats.syntax.cartesian._
 import scala.concurrent.duration._
 import scala.util.Try
 
 object LoadValidatedConfig {
   sealed abstract case class HttpConfig(host: String, port: Int)
   sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
-  
-  // Following allows Shapeless to create instances of our sealed abstract case classes
-  private implicit val genHttpConfig: Generic[HttpConfig] = new Generic[HttpConfig] {
-    type Repr = String :: Int :: HNil
- 
-    def to(t: HttpConfig): Repr =
-      t.host :: t.port :: HNil
-    def from(r: Repr): HttpConfig =
-      new HttpConfig(r(0), r(1)) {}
-  }
-  private implicit val genSettings: Generic[Settings] = new Generic[Settings] {
-    type Repr = String :: FiniteDuration :: HttpConfig :: HNil
- 
-    def to(t: Settings): Repr =
-      t.name :: t.timeout :: t.http :: HNil
-    def from(r: Repr): Settings =
-      new Settings(r(0), r(1), r(2)) {}
-  }
 
-  def apply(): Try[Settings] =
-    validateConfig("application.conf") { implicit config =>
-      build[Settings](
-        validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")),
-        validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
-        via("http") { implicit config =>
-          build[HttpConfig](
-            unchecked[String]("host"),
+  def apply(): Validated[ConfigError, Settings] =
+    validateConfig[Settings]("application.conf") { implicit config =>
+      (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+        validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
+        via[HttpConfig]("http") { implicit config =>
+          (unchecked[String]("host") |@|
             validate[Int]("port", ShouldBePositive)(_ > 0)
-          )
+          ).map { case (host, port) => new HttpConfig(host, port) {} }
         }
-      )
+      ).map { case (name, timeout, http) => new Settings(name, timeout, http) {} }
     }
 }
 ```
