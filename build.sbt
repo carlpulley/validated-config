@@ -15,8 +15,8 @@ Publish.settings
 resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++= Seq(
+  cats,
   ficus,
   scalatest % Test,
-  shapeless,
   typesafeConfig
 )

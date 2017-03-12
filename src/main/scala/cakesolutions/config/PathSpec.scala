@@ -1,3 +1,5 @@
+// Copyright 2016 Carl Pulley
+
 package cakesolutions.config
 
 /**
