@@ -5,8 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.0.1)](http://travis-ci.org/carlpulley/validated-config)
-[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.1-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.0.1%7Cjar)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.0.2)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.2-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.0.2%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -17,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.0.1"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.0.2"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -109,13 +109,13 @@ and type check configuration values, we only need to define a [custom extractor]
 
 ## Example
 
-Given the following Scala case classes:
+Given the following Scala case classes (with [refined](https://github.com/fthomas/refined) refinement types):
 ```scala
 case object NameShouldBeNonEmptyAndLowerCase extends Exception
 case object ShouldBePositive extends Exception
 
-final case class HttpConfig(host: String, port: Int)
-final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+final case class HttpConfig(host: String, port: Int Refined Positive)
+final case class Settings(name: String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T], timeout: FiniteDuration, http: HttpConfig)
 ```
 and the following Typesafe configuration objects (e.g. stored in a file named `application.conf`):
 ```
@@ -133,11 +133,11 @@ then we can generate a validated `Settings` case class instance as
 follows:
 ```scala
  validateConfig[Settings]("application.conf") { implicit config =>
-   (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+   (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name") |@|
      validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
      via[HttpConfig]("http") { implicit config =>
        (unchecked[String]("host") |@|
-         validate[Int]("port", ShouldBePositive)(_ > 0)
+         unchecked[Int Refined Int]("port")
        ).map(HttpConfig(_, _))
      }
    ).map(Settings(_, _, _))
@@ -160,20 +160,25 @@ package cakesolutions.example
 import cakesolutions.config._
 import cats.data.Validated
 import cats.syntax.cartesian._
+import eu.timepit.refined._
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.auto._
+import eu.timepit.refined.numeric._
+import eu.timepit.refined.string._
 import scala.concurrent.duration._
 import scala.util.Try
 
 object LoadValidatedConfig {
-  sealed abstract case class HttpConfig(host: String, port: Int)
-  sealed abstract case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+  sealed abstract case class HttpConfig(host: String, port: Int Refined Positive)
+  sealed abstract case class Settings(name: String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T], timeout: FiniteDuration, http: HttpConfig)
 
   def apply(): Validated[ConfigError, Settings] =
     validateConfig[Settings]("application.conf") { implicit config =>
-      (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+      (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name") |@|
         validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
         via[HttpConfig]("http") { implicit config =>
           (unchecked[String]("host") |@|
-            validate[Int]("port", ShouldBePositive)(_ > 0)
+            unchecked[Int Refined Positive]("port")
           ).map(new HttpConfig(_, _) {})
         }
       ).map(new Settings(_, _, _) {})
