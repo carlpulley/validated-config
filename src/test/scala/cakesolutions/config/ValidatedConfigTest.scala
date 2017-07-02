@@ -5,6 +5,11 @@ package cakesolutions.config
 import cats.data.{NonEmptyList => NEL, Validated}
 import cats.syntax.cartesian._
 import com.typesafe.config.{Config, ConfigException, ConfigFactory}
+import eu.timepit.refined._
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.auto._
+import eu.timepit.refined.numeric._
+import eu.timepit.refined.string._
 import org.scalatest.FreeSpec
 
 import scala.concurrent.duration._
@@ -16,8 +21,8 @@ object ValidatedConfigTest {
   case object ShouldNotBeNegative extends Exception
 
   // Permissive case class construction - instances may be altered after creation
-  final case class HttpConfig(host: String, port: Int)
-  final case class Settings(name: String, timeout: FiniteDuration, http: HttpConfig)
+  final case class HttpConfig(host: String, port: Int Refined Positive)
+  final case class Settings(name: String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T], timeout: FiniteDuration, http: HttpConfig)
 }
 
 class ValidatedConfigTest extends FreeSpec {
@@ -75,6 +80,8 @@ class ValidatedConfigTest extends FreeSpec {
       assert(validate[String](required("test.nestedRequired", "UNDEFINED"), GenericTestFailure)("UNDEFINED" == _) == Validated.Invalid(NEL.of(ValueFailure("test.nestedRequired", RequiredValueNotSet))))
       assert(validate[Int]("test.context.valueInt", GenericTestFailure)(30 == _) == Validated.Valid(30))
       assert(validate[Int](required("test.context.valueInt", "NOT_SET"), GenericTestFailure)(30 == _) == Validated.Valid(30))
+      assert(validate[Int Refined Positive]("test.context.valueInt", GenericTestFailure)(_.value != 30) == Validated.Invalid(NEL.of(ValueFailure("test.context.valueInt", GenericTestFailure))))
+      assert(validate[Int Refined Positive](required("test.context.valueInt", "NOT_SET"), GenericTestFailure)(_.value != 30) == Validated.Invalid(NEL.of(ValueFailure("test.context.valueInt", GenericTestFailure))))
       assert(validate[String]("test.context.valueStr", GenericTestFailure)("test string" == _) == Validated.Valid("test string"))
       assert(validate[String](required("test.context.valueStr", "NOT_SET"), GenericTestFailure)("test string" == _) == Validated.Valid("test string"))
       assert(validate[FiniteDuration]("test.context.valueDuration", GenericTestFailure)(12.milliseconds == _) == Validated.Valid(12.milliseconds))
@@ -234,21 +241,6 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Valid(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
         }
-//        val testConfig2 = via[TestSettings]("test") { implicit config =>
-//          (validate[String]("context.valueStr", GenericTestFailure)(_ => true) |@|
-//            validate[Int]("context.valueInt", GenericTestFailure)(_ => true) |@|
-//            validate[Double](required("nestedVal", "NOT_SET"), GenericTestFailure)(_ => true) |@|
-//            validate[FiniteDuration]("nestedDuration", GenericTestFailure)(_ => true) |@|
-//            validate[List[String]]("context.valueStrList", GenericTestFailure)(_ => true) |@|
-//            validate[List[Double]]("context.valueDoubleList", GenericTestFailure)(_ => true)
-//          ).map(TestSettings(_, _, _, _, _, _))
-//        }
-//        matchOrFail(testConfig2) {
-//          case Validated.Invalid(errors) => errors.toList match {
-//            case List(ValueFailure("test.context.valueStr", _: ConfigException.WrongType)) =>
-//              assert(true)
-//          }
-//        }
         val testConfig3 = via[TestSettings]("test") { implicit config =>
           (validate[String]("context.valueStr", GenericTestFailure)(_ => true) |@|
             validate[Int](required("context.valueInt", "NOT_SET"), GenericTestFailure)(_ => true) |@|
@@ -310,21 +302,6 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Valid(TestSettings("test string", 30, 50.68, duration, List("addr1:10", "addr2:20", "addr3:30"), List(10.2, 20, 0.123))) =>
             assert(duration == 4.hours)
         }
-//        val testConfig2 = via[TestSettings]("test") { implicit config =>
-//          (unchecked[String]("context.valueStr") |@|
-//            unchecked[Int]("context.valueInt") |@|
-//            unchecked[Double]("nestedVal") |@|
-//            unchecked[FiniteDuration]("nestedDuration") |@|
-//            unchecked[List[String]]("context.valueStrList") |@|
-//            unchecked[List[Double]]("context.valueDoubleList")
-//          ).map(TestSettings(_, _, _, _, _, _))
-//        }
-//        matchOrFail(testConfig2) {
-//          case Validated.Invalid(errors) => errors.toList match {
-//            case List(ValueFailure("test.context.valueStr", _: ConfigException.WrongType)) =>
-//              assert(true)
-//          }
-//        }
         val testConfig3 = via[TestSettings]("test") { implicit config =>
           (unchecked[String]("context.valueStr") |@|
             unchecked[Int]("context.valueInt") |@|
@@ -378,11 +355,11 @@ class ValidatedConfigTest extends FreeSpec {
     "invalid files fail to load" in {
       val validatedConfig =
         validateConfig[Settings]("non-existent.conf") { implicit config =>
-          (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+          (validate[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name", NameShouldBeNonEmptyAndLowerCase)(_.value.matches("[a-z0-9_-]+")) |@|
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds) |@|
             via[HttpConfig]("http") { implicit config =>
               (unchecked[String]("host") |@|
-                validate[Int]("port", ShouldBePositive)(_ > 0)
+                validate[Int Refined Positive]("port", ShouldBePositive)(_.value > 0)
               ).map(HttpConfig(_, _))
             }
           ).map(Settings(_, _, _))
@@ -397,11 +374,11 @@ class ValidatedConfigTest extends FreeSpec {
     "files referencing non-existent (required) includes fail to load" in {
       val validatedConfig =
         validateConfig[Settings]("invalid.conf") { implicit config =>
-          (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+          (validate[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name", NameShouldBeNonEmptyAndLowerCase)(_.value.matches("[a-z0-9_-]+")) |@|
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds) |@|
             via[HttpConfig]("http") { implicit config =>
               (unchecked[String]("host") |@|
-                validate[Int]("port", ShouldBePositive)(_ > 0)
+                validate[Int Refined Positive]("port", ShouldBePositive)(_.value > 0)
               ).map(HttpConfig(_, _))
             }
           ).map(Settings(_, _, _))
@@ -419,7 +396,7 @@ class ValidatedConfigTest extends FreeSpec {
       val validatedConfig =
         validateConfig[HttpConfig]("http.conf") { implicit config =>
           (unchecked[String]("http.host") |@|
-            validate[Int]("http.port", NotAHttpPort)(_ != 80)
+            validate[Int Refined Positive]("http.port", NotAHttpPort)(_.value != 80)
           ).map(HttpConfig(_, _))
         }
 
@@ -429,11 +406,11 @@ class ValidatedConfigTest extends FreeSpec {
     "valid file but required values not set" in {
       val validatedConfig =
         validateConfig[Settings]("application.conf") { implicit config =>
-          (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+          (validate[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name", NameShouldBeNonEmptyAndLowerCase)(_.value.matches("[a-z0-9_-]+")) |@|
             validate[FiniteDuration](required("http.heartbeat", "NOT_SET"), ShouldNotBeNegative)(_ >= 0.seconds) |@|
             via[HttpConfig]("http") { implicit config =>
               (unchecked[String]("host") |@|
-                validate[Int]("port", ShouldBePositive)(_ > 0)
+                validate[Int Refined Positive]("port", ShouldBePositive)(_.value > 0)
               ).map(HttpConfig(_, _))
             }
           ).map(Settings(_, _, _))
@@ -465,18 +442,20 @@ class ValidatedConfigTest extends FreeSpec {
       implicit val config = envMapping.withFallback(ConfigFactory.parseResourcesAnySyntax("application.conf")).resolve()
 
       val validatedConfig =
-        (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+        (validate[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name", NameShouldBeNonEmptyAndLowerCase)(_.value.matches("[a-z0-9_-]+")) |@|
           validate[FiniteDuration](required("http.heartbeat", "NOT_SET"), ShouldNotBeNegative)(_ >= 0.seconds) |@|
           via[HttpConfig]("http") { implicit config =>
             (unchecked[String]("host") |@|
-              validate[Int]("port", ShouldBePositive)(_ > 0)
+              validate[Int Refined Positive]("port", ShouldBePositive)(_.value > 0)
             ).map(HttpConfig(_, _))
           }
         ).map(Settings(_, _, _))
 
       assert(validatedConfig.isValid)
       matchOrFail(validatedConfig) {
-        case Validated.Valid(Settings("test-data", timeout, HttpConfig("192.168.99.100", 5678))) =>
+        case Validated.Valid(Settings(name, timeout, HttpConfig("192.168.99.100", port))) =>
+        assert(name.value == "test-data")
+        assert(port.value == 5678)
           assert(timeout == 20.seconds)
       }
     }
@@ -484,11 +463,11 @@ class ValidatedConfigTest extends FreeSpec {
     "using system environment variable overrides" in {
       val validatedConfig =
         validateConfig[Settings]("application.conf") { implicit config =>
-          (validate[String]("name", NameShouldBeNonEmptyAndLowerCase)(_.matches("[a-z0-9_-]+")) |@|
+          (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name") |@|
             validate[FiniteDuration]("http.timeout", ShouldNotBeNegative)(_ >= 0.seconds) |@|
             via[HttpConfig]("http") { implicit config =>
               (unchecked[String]("host") |@|
-                validate[Int]("port", ShouldBePositive)(_ > 0)
+                unchecked[Int Refined Positive]("port")
               ).map(HttpConfig(_, _))
             }
           ).map(Settings(_, _, _))
@@ -496,7 +475,9 @@ class ValidatedConfigTest extends FreeSpec {
 
       assert(validatedConfig.isValid)
       matchOrFail(validatedConfig) {
-        case Validated.Valid(Settings("test-data", timeout, HttpConfig("localhost", 80))) =>
+        case Validated.Valid(Settings(name, timeout, HttpConfig("localhost", port))) =>
+          assert(name.value == "test-data")
+          assert(port.value == 80)
           assert(timeout == 30.seconds)
       }
     }
