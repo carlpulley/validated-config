@@ -72,6 +72,13 @@ package object config extends FicusInstances {
     }
   }
 
+  /**
+    * Applicative functor for value validation
+    *
+    * @tparam Value type of property that is being validated
+    */
+  type ValidationFailure[Value] = Validated[NEL[ValueFailure], Value]
+
   // Configuration file loader
 
   /**
@@ -80,7 +87,7 @@ package object config extends FicusInstances {
    * @param configFile the root Typesafe config file name
    * @param check the builder and validator that we will use to construct the `ValidConfig` instance
    * @tparam ValidConfig the case class type that we are to construct
-   * @return either a [[ConfigError]] throwable instance or the validated case class `ValidConfig`
+   * @return either a `ConfigError` throwable instance or the validated case class `ValidConfig`
    */
   def validateConfig[ValidConfig](
     configFile: String

@@ -28,8 +28,6 @@ object ValidatedConfigTest {
 class ValidatedConfigTest extends FreeSpec {
   import ValidatedConfigTest._
 
-  type ValidationFailure[Value] = Validated[NEL[ValueFailure], Value]
-
   private def matchOrFail[Value](value: => Value)(matcher: PartialFunction[Value, Unit]): Unit = {
     matcher.orElse[Value, Unit] { case result => assert(false, result) }(value)
   }

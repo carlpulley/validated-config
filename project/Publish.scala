@@ -25,10 +25,6 @@ object Publish {
           <distribution>repo</distribution>
         </license>
       </licenses>
-      <scm>
-        <url>https://github.com/carlpulley/validated-config</url>
-        <connection>https://github.com/carlpulley/validated-config</connection>
-      </scm>
       <developers>
         <developer>
           <id>carlpulley</id>
