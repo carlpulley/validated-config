@@ -5,8 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.0.2)](http://travis-ci.org/carlpulley/validated-config)
-[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.2-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.0.2%7Cjar)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.1.0)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/badge/maven--central-v1.1.0-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.1.0%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -17,11 +17,11 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.0.2"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.1.0"
 ```
 
 To access the validated Typesafe configuration library code in your
-project code, simply `import cakesolutions.config._`.
+project code, simply `import net.cakesolutions.config._`.
 
 ## Validating Configuration Values
 
@@ -133,14 +133,14 @@ then we can generate a validated `Settings` case class instance as
 follows:
 ```scala
  validateConfig[Settings]("application.conf") { implicit config =>
-   (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name") |@|
-     validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
+   (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name"),
+     validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
      via[HttpConfig]("http") { implicit config =>
-       (unchecked[String]("host") |@|
+       (unchecked[String]("host"),
          unchecked[Int Refined Int]("port")
-       ).map(HttpConfig(_, _))
+       ).map2(HttpConfig(_, _))
      }
-   ).map(Settings(_, _, _))
+   ).map3(Settings(_, _, _))
  }
 ```
 Internally, we use `NonEmptyList[ValueError]` for error signal management - however, `validateConfig` aggregates and materialises
@@ -155,37 +155,44 @@ not be faked (e.g. via copy constructors or uses of the apply method).
 If we want to do this, then the previous example's case classes could
 be rewritten as say:
 ```scala
-package cakesolutions.example
+package net.cakesolutions.example
 
-import cakesolutions.config._
+import scala.concurrent.duration._
+import scala.util.Try
+
 import cats.data.Validated
-import cats.syntax.cartesian._
+import cats.implicits._
+import cats.syntax._
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.numeric._
 import eu.timepit.refined.string._
-import scala.concurrent.duration._
-import scala.util.Try
+
+import net.cakesolutions.config._
 
 object LoadValidatedConfig {
+  type ValidationFailure[Value] = Validated[NEL[ValueFailure], Value]
+
   sealed abstract case class HttpConfig(host: String, port: Int Refined Positive)
   sealed abstract case class Settings(name: String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T], timeout: FiniteDuration, http: HttpConfig)
 
   def apply(): Validated[ConfigError, Settings] =
     validateConfig[Settings]("application.conf") { implicit config =>
-      (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name") |@|
-        validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds) |@|
+      Applicative[ValidationFailure].map3(
+        unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name"),
+        validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
         via[HttpConfig]("http") { implicit config =>
-          (unchecked[String]("host") |@|
+          Applicative[ValidationFailure].map2(
+            unchecked[String]("host"),
             unchecked[Int Refined Positive]("port")
-          ).map(new HttpConfig(_, _) {})
+          )(new HttpConfig(_, _) {})
         }
-      ).map(new Settings(_, _, _) {})
+      )(new Settings(_, _, _) {})
     }
 }
 ```
-Here, package `cakesolutions.example` is responsible for loading and parsing our configuration files.
+Here, package `net.cakesolutions.example` is responsible for loading and parsing our configuration files.
 
 As first reported by [@tpolecat](https://gist.github.com/tpolecat/a5cb0dc9adeacc93f846835ed21c92d2) and discussed further in 
 [Enforcing invariants in Scala datatypes](http://www.cakesolutions.net/teamblogs/enforcing-invariants-in-scala-datatypes), the use of an sealed abstract case class

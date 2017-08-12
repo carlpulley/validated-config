@@ -2,6 +2,7 @@
 
 import sbt.Keys._
 import sbt._
+import scoverage.ScoverageKeys.{coverageExcludedFiles, coverageFailOnMinimum, coverageMinimum}
 
 /**
  * Common project settings
@@ -12,11 +13,19 @@ object CommonProject {
       organization := "net.cakesolutions",
       scalacOptions in Compile ++= Seq(
         "-encoding", "UTF-8",
-        "-target:jvm-1.8",
+        "-feature",
         "-deprecation",
         "-unchecked",
+        "-language:postfixOps",
+        "-language:implicitConversions",
+        "-Xlint",
+        "-Yno-adapted-args",
         "-Ywarn-dead-code",
-        "-feature"
+        "-Ywarn-numeric-widen",
+        "-Xfuture",
+        "-Ywarn-unused-import",
+        "-Ypartial-unification",
+        "-Xfatal-warnings"
       ),
       scalacOptions in (Compile, doc) ++= {
         val nm = (name in(Compile, doc)).value
@@ -27,15 +36,20 @@ object CommonProject {
       javacOptions in (Compile, compile) ++= Seq(
         "-source", "1.8",
         "-target", "1.8",
-        "-Xlint:unchecked",
-        "-Xlint:deprecation",
-        "-Xlint:-options"
+        "-Xlint:all",
+        "-Xlint:-options",
+        "-Xlint:-path",
+        "-Xlint:-processing",
+        "-Werror"
       ),
       javacOptions in doc := Seq(),
       javaOptions += "-Xmx2G",
       outputStrategy := Some(StdoutOutput),
       testOptions in Test += Tests.Argument("-oFD"),
       fork := true,
-      fork in test := true
+      fork in test := true,
+      coverageMinimum := 100,
+      coverageFailOnMinimum := true,
+      coverageExcludedFiles := ".*/target/.*"
     )
 }
