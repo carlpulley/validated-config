@@ -1,6 +1,6 @@
 // Copyright 2016 Carl Pulley
 
-package cakesolutions.config
+package net.cakesolutions.config
 
 /**
  * Ensures that the specified path has a value defined for it. This may be achieved:
