@@ -3,9 +3,9 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title>validated-config 1.1.1 - net.cakesolutions.config</title>
-          <meta name="description" content="validated - config 1.1.1 - net.cakesolutions.config" />
-          <meta name="keywords" content="validated config 1.1.1 net.cakesolutions.config" />
+          <title>validated-config 1.1.2 - net.cakesolutions.config</title>
+          <meta name="description" content="validated - config 1.1.2 - net.cakesolutions.config" />
+          <meta name="keywords" content="validated config 1.1.2 net.cakesolutions.config" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title">validated-config<span id="doc-version">1.1.1</span></span>
+        <span id="doc-title">validated-config<span id="doc-version">1.1.2</span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -376,6 +376,23 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
       
       <p class="shortcomment cmt">Ensures that the specified path has a value defined for it.</p><div class="fullcomment"><div class="comment cmt"><p>Ensures that the specified path has a value defined for it. This may be achieved:</p><ul><li>at the Typesafe configuration file level: the path must exist and have a non-null value</li><li>using a sentinal value: the path has the sentinal value if and only if it has not been set or assigned to.
 </li></ul></div></div>
+    </li><li name="net.cakesolutions.config.ValidationFailure" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ValidationFailure[Value]=cats.data.Validated[cats.data.NonEmptyList[net.cakesolutions.config.ValueFailure],Value]"></a><a id="ValidationFailure[Value]:ValidationFailure[Value]"></a>
+      <span class="permalink">
+      <a href="../../../net/cakesolutions/config/index.html#ValidationFailure[Value]=cats.data.Validated[cats.data.NonEmptyList[net.cakesolutions.config.ValueFailure],Value]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ValidationFailure</span><span class="tparams">[<span name="Value">Value</span>]</span><span class="result alias"> = <span class="extype" name="cats.data.Validated">Validated</span>[<span class="extype" name="cats.data.NonEmptyList">NonEmptyList</span>[<a href="ValueFailure.html" class="extype" name="net.cakesolutions.config.ValueFailure">ValueFailure</a>], <span class="extype" name="net.cakesolutions.config.ValidationFailure.Value">Value</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Applicative functor for value validation
+</p>
     </li><li name="net.cakesolutions.config.ValueError" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="ValueErrorextendsAnyRef"></a><a id="ValueError:ValueError"></a>
       <span class="permalink">
@@ -912,7 +929,7 @@ then we fail with <code>failureReason</code>.
       
       <p class="shortcomment cmt">Loads Typesafe config file and then builds the validated case class <code>ValidConfig</code>
 </p><div class="fullcomment"><div class="comment cmt"><p>Loads Typesafe config file and then builds the validated case class <code>ValidConfig</code>
-</p></div><dl class="paramcmts block"><dt class="tparam">ValidConfig</dt><dd class="cmt"><p>the case class type that we are to construct</p></dd><dt class="param">configFile</dt><dd class="cmt"><p>the root Typesafe config file name</p></dd><dt class="param">check</dt><dd class="cmt"><p>the builder and validator that we will use to construct the <code>ValidConfig</code> instance</p></dd><dt>returns</dt><dd class="cmt"><p>either a <a href="ConfigError.html" class="extype" name="net.cakesolutions.config.ConfigError">ConfigError</a> throwable instance or the validated case class <code>ValidConfig</code></p></dd></dl></div>
+</p></div><dl class="paramcmts block"><dt class="tparam">ValidConfig</dt><dd class="cmt"><p>the case class type that we are to construct</p></dd><dt class="param">configFile</dt><dd class="cmt"><p>the root Typesafe config file name</p></dd><dt class="param">check</dt><dd class="cmt"><p>the builder and validator that we will use to construct the <code>ValidConfig</code> instance</p></dd><dt>returns</dt><dd class="cmt"><p>either a <code>ConfigError</code> throwable instance or the validated case class <code>ValidConfig</code></p></dd></dl></div>
     </li><li name="net.cakesolutions.config#via" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="via[ValidConfig](path:String)(inner:com.typesafe.config.Config=&gt;cats.data.Validated[cats.data.NonEmptyList[net.cakesolutions.config.ValueFailure],ValidConfig])(implicitconfig:com.typesafe.config.Config):cats.data.Validated[cats.data.NonEmptyList[net.cakesolutions.config.ValueFailure],ValidConfig]"></a><a id="via[ValidConfig](String)((Config)⇒Validated[NonEmptyList[ValueFailure],ValidConfig])(Config):Validated[NonEmptyList[ValueFailure],ValidConfig]"></a>
       <span class="permalink">
