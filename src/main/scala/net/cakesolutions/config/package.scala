@@ -107,7 +107,7 @@ package object config extends FicusInstances {
    * @param inner configuration builder that we will apply to the restricted `Config` object
    * @param config the current in-scope `Config` object that we need to path restrict
    * @tparam ValidConfig the case class type that we are to construct
-   * @return either a [[ValueError]] or the validated case class `ValidConfig`
+   * @return either a `ValueError` or the validated case class `ValidConfig`
    */
   def via[ValidConfig](
     path: String
@@ -172,7 +172,7 @@ package object config extends FicusInstances {
    * then we fail with `failureReason`.
    *
    * @param pathSpec Typesafe config path to the value we are validating
-   * @param failureReason if `check` fails, the [[Throwable]] instance we return
+   * @param failureReason if `check` fails, the `Throwable` instance we return
    * @param check predicate used to check the configuration value
    * @param config the currently in scope config object that we use
    * @param reader Ficus `ValueReader` that we use for type checking the parsed config value
