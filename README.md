@@ -95,10 +95,10 @@ unchecked[FiniteDuration](required("test.nestedDuration", "UNDEFINED"))
 ## Building Validated `Config` Instances
 
 Building validated configuration case class instances is performed using
-the methods `via` and `map`. `via` allows the currently in-scope
-implicit `Config` instance to be restricted to a specified path. `map`
+the methods `via` and `mapN` (where `N` is the number to paths being validated). `via` allows the currently in-scope
+implicit `Config` instance to be restricted to a specified path. `mapN`
 can be used to construct the case class instance from a product of `Validated.Valid` values. To do this,
-`map` takes a validated tuple of arguments that should be the results of either
+`mapN` takes a validated tuple of arguments that should be the results of either
 building inner validated case class instances or from using the
 `validate` and `unchecked` methods to validate values at a given path.
 
@@ -133,14 +133,16 @@ then we can generate a validated `Settings` case class instance as
 follows:
 ```scala
  validateConfig[Settings]("application.conf") { implicit config =>
-   (unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name"),
+   Applicative[ValidationFailure].map3(
+     unchecked[String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T]]("name"),
      validate[FiniteDuration]("http.timeout", ShouldBePositive)(_ >= 0.seconds),
      via[HttpConfig]("http") { implicit config =>
-       (unchecked[String]("host"),
+       Applicative[ValidationFailure].map2(
+         unchecked[String]("host"),
          unchecked[Int Refined Int]("port")
-       ).map2(HttpConfig(_, _))
+       )(HttpConfig)
      }
-   ).map3(Settings(_, _, _))
+   )(Settings)
  }
 ```
 Internally, we use `NonEmptyList[ValueError]` for error signal management - however, `validateConfig` aggregates and materialises
