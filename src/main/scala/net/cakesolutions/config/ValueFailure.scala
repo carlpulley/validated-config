@@ -1,6 +1,6 @@
 // Copyright 2016 Carl Pulley
 
-package cakesolutions.config
+package net.cakesolutions.config
 
 /**
  * Reasons why we might fail to parse a value from the config file

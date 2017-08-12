@@ -1,6 +1,9 @@
 // Copyright 2016 Carl Pulley
 
-package cakesolutions
+package net.cakesolutions
+
+import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 import cats.data.{NonEmptyList => NEL, Validated}
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions, ConfigResolveOptions}
@@ -8,9 +11,6 @@ import eu.timepit.refined._
 import eu.timepit.refined.api.{Validate, Refined}
 import net.ceedubs.ficus.readers.ValueReader
 import net.ceedubs.ficus.{FicusConfig, FicusInstances, SimpleFicusConfig}
-
-import scala.language.{implicitConversions, reflectiveCalls}
-import scala.util.{Failure, Success, Try}
 
 /**
  * Using <a href="https://github.com/typesafehub/config">Typesafe config</a> we read in and parse configuration files.

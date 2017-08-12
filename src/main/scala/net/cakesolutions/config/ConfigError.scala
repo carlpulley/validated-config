@@ -1,6 +1,6 @@
 // Copyright 2016 Carl Pulley
 
-package cakesolutions.config
+package net.cakesolutions.config
 
 /**
  * General reasons for why a config value might fail to be validated by `validate`.
