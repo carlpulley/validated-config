@@ -3,9 +3,9 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title>validated-config 1.0.1 - cakesolutions</title>
-          <meta name="description" content="validated - config 1.0.1 - cakesolutions" />
-          <meta name="keywords" content="validated config 1.0.1 cakesolutions" />
+          <title>validated-config 1.1.0 - net</title>
+          <meta name="description" content="validated - config 1.1.0 - net" />
+          <meta name="keywords" content="validated config 1.1.0 net" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title">validated-config<span id="doc-version">1.0.1</span></span>
+        <span id="doc-title">validated-config<span id="doc-version">1.1.0</span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -71,10 +71,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
-    </li><li name="_root_.cakesolutions" visbl="pub" class="indented1 current" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="cakesolutions"></a><a id="cakesolutions:cakesolutions"></a>
+    </li><li name="_root_.net" visbl="pub" class="indented1 current" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="net"></a><a id="net:net"></a>
       <span class="permalink">
-      <a href="index.html#cakesolutions" title="Permalink">
+      <a href="index.html#net" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -83,14 +83,14 @@
         <span class="kind">package</span>
       </span>
       <span class="symbol">
-        <span class="name">cakesolutions</span>
+        <span class="name">net</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
-    </li><li name="cakesolutions.config" visbl="pub" class="indented2 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="config"></a><a id="config:config"></a>
+    </li><li name="net.cakesolutions" visbl="pub" class="indented2 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cakesolutions"></a><a id="cakesolutions:cakesolutions"></a>
       <span class="permalink">
-      <a href="../cakesolutions/index.html#config" title="Permalink">
+      <a href="../net/index.html#cakesolutions" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -99,37 +99,12 @@
         <span class="kind">package</span>
       </span>
       <span class="symbol">
-        <a title="Using HtmlTag(&lt;a href=&quot;https://github.com/typesafehub/config&quot;&gt;Typesafe config&lt;/a&gt;) we read in and parse configuration files.HtmlTag(&lt;/a&gt;)" href="config/index.html">
-              <span class="name">config</span>
+        <a title="" href="cakesolutions/index.html">
+              <span class="name">cakesolutions</span>
             </a>
       </span>
       
-      <p class="shortcomment cmt">Using <a href="https://github.com/typesafehub/config">Typesafe config</a> we read in and parse configuration files.</a></p><div class="fullcomment"><div class="comment cmt"><p>Using <a href="https://github.com/typesafehub/config">Typesafe config</a> we read in and parse configuration files.
-Paths into these files are then retrieved and type checked using <a href="https://github.com/iheartradio/ficus">Ficus</a>.</p><p>Using a lightweight DSL, we are able to then check and validate these
-type checked values. For example, given that the Typesafe configuration:</p><pre>top-level-name = <span class="lit">"test"</span>
-test {
-  nestedVal = <span class="num">50.68</span>
-  nestedDuration = <span class="num">4</span> h
-  nestedList = []
-  context {
-    valueInt = <span class="num">30</span>
-    valueStr = <span class="lit">"test string"</span>
-    valueDuration = <span class="num">12</span> ms
-    valueStrList = [ <span class="lit">"addr1:10"</span>, <span class="lit">"addr2:20"</span>, <span class="lit">"addr3:30"</span> ]
-    valueDoubleList = [ <span class="num">10.2</span>, <span class="num">20</span>, <span class="num">0.123</span> ]
-  }
-}</pre><p>has been parsed and read into an implicit of type <code>Config</code>, then we are
-able to validate that the value at the path <code>test.nestedVal</code> has type
-<code>Double</code> and that it satisfies specified size bounds as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeAPercentageValue <span class="kw">extends</span> Exception
-
-validate[<span class="std">Double</span>](<span class="lit">"test.nestedVal"</span>, ShouldBeAPercentageValue)(n <span class="kw">=&gt;</span> <span class="num">0</span> &lt;= n &amp;&amp; n &lt;= <span class="num">100</span>)</pre><p>If the configuration value at path <code>test.nestedVal</code> fails to pass the
-percentage bounds check, then <code>Left(ShouldBeAPercentageValue)</code> is
-returned.</p><p>Likewise, we can enforce that all values in the array at the path
-<code>test.context.valueStrList</code> match the regular expression pattern
-<code>[a-z0-9]+:[0-9]+</code> as follows:</p><pre><span class="kw">case</span> <span class="kw">object</span> ShouldBeASocketValue <span class="kw">extends</span> Exception
-
-validate[<span class="std">List</span>[<span class="std">String</span>]](<span class="lit">"test.context.valueStrList"</span>, ShouldBeASocketValue)(_.matches(<span class="lit">"[a-z0-9]+:[0-9]+"</span>))</pre><p>In some instances, we may not care about checking the value at a
-configuration path. In these cases we can use <code>unchecked</code>:</p><pre>unchecked[FiniteDuration](<span class="lit">"test.nestedDuration"</span>)</pre></div></div>
+      
     </li>
               </ul>
             </div>
@@ -139,8 +114,8 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
       <div id="definition">
         <div class="big-circle package">p</div>
         
-        <h1>cakesolutions<span class="permalink">
-      <a href="../cakesolutions/index.html" title="Permalink">
+        <h1>net<span class="permalink">
+      <a href="../net/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
@@ -153,7 +128,7 @@ configuration path. In these cases we can use <code>unchecked</code>:</p><pre>un
         <span class="kind">package</span>
       </span>
       <span class="symbol">
-        <span class="name">cakesolutions</span>
+        <span class="name">net</span>
       </span>
       </h4>
 
