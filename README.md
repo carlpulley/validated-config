@@ -5,8 +5,8 @@ to avoid throwing exceptions. Here, we apply these principles to the
 [Typesafe config](https://github.com/typesafehub/config) library without
 introducing unnecessary boilerplate code.
 
-[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.1.2)](http://travis-ci.org/carlpulley/validated-config)
-[![Maven Central](https://img.shields.io/badge/maven--central-v1.1.2-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.1.2%7Cjar)
+[![Build Status](https://secure.travis-ci.org/carlpulley/validated-config.png?tag=1.1.3)](http://travis-ci.org/carlpulley/validated-config)
+[![Maven Central](https://img.shields.io/badge/maven--central-v1.1.3-blue.svg)](http://search.maven.org/#artifactdetails%7Cnet.cakesolutions%7Cvalidated-config_2.12%7C1.1.3%7Cjar)
 [![Apache 2](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![API](https://readthedocs.org/projects/pip/badge/)](https://carlpulley.github.io/validated-config/latest/api#cakesolutions.config.package)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/4cb77ad257344e6185603dceb7b2af65)](https://www.codacy.com/app/c-pulley/validated-config)
@@ -17,7 +17,7 @@ introducing unnecessary boilerplate code.
 To use this library, add the following dependency to your `build.sbt`
 file:
 ```
-libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.1.2"
+libraryDependencies += "net.cakesolutions" %% "validated-config" % "1.1.3"
 ```
 
 To access the validated Typesafe configuration library code in your
@@ -200,3 +200,8 @@ ensures that constructors, copy constructors and companion apply methods are not
 by the compiler. Hence, the only way that instances of `HttpConfig` and `Settings` can be
 created is via the package protected code in the respective implicits - and so
 we ensure that all such validated configurations are compile time checked as being invariant!
+
+# Prefer to use Scalaz over Cats?
+
+In this use case, we recommend the use of [shims](https://github.com/djspiewak/shims) to convert from
+[cats](https://typelevel.org/cats/) data structures to [Scalaz](https://github.com/scalaz/scalaz) data structures.
