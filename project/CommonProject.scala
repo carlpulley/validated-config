@@ -19,12 +19,8 @@ object CommonProject {
         "-language:postfixOps",
         "-language:implicitConversions",
         "-Xlint",
-        "-Yno-adapted-args",
         "-Ywarn-dead-code",
         "-Ywarn-numeric-widen",
-        "-Xfuture",
-        "-Ywarn-unused-import",
-        "-Ypartial-unification",
         "-Xfatal-warnings"
       ),
       scalacOptions in (Compile, doc) ++= {

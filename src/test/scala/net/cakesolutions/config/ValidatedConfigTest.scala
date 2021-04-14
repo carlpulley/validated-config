@@ -3,16 +3,15 @@
 package net.cakesolutions.config
 
 import scala.concurrent.duration._
-
 import cats._
-import cats.data.{NonEmptyList => NEL, Validated}
+import cats.data.{Validated, NonEmptyList => NEL}
 import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.numeric._
 import eu.timepit.refined.string._
-import org.scalatest.FreeSpec
+import org.scalatest.freespec.AnyFreeSpec
 
 object ValidatedConfigTest {
   case object GenericTestFailure extends Exception
@@ -25,7 +24,7 @@ object ValidatedConfigTest {
   final case class Settings(name: String Refined MatchesRegex[W.`"[a-z0-9_-]+"`.T], timeout: FiniteDuration, http: HttpConfig)
 }
 
-class ValidatedConfigTest extends FreeSpec {
+class ValidatedConfigTest extends AnyFreeSpec {
   import ValidatedConfigTest._
 
   private def matchOrFail[Value](value: => Value)(matcher: PartialFunction[Value, Unit]): Unit = {
@@ -100,54 +99,63 @@ class ValidatedConfigTest extends FreeSpec {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", _: ConfigException.Missing)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String](required("invalid-path"), GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", RequiredValueNotSet)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String](required("invalid-path", "NOT_SET"), GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", _: ConfigException.Missing)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String]("test.invalid-path", GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("test.invalid-path", _: ConfigException.Missing)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String](required("test.invalid-path", "NOT_SET"), GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("test.invalid-path", _: ConfigException.Missing)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[Int]("top-level-name", GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", _: ConfigException.WrongType)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[Int](required("top-level-name", "NOT_SET"), GenericTestFailure)(_ => true)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", _: ConfigException.WrongType)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String]("top-level-name", GenericTestFailure)(_ => throw fakeException)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", `fakeException`)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(validate[String](required("top-level-name", "NOT_SET"), GenericTestFailure)(_ => throw fakeException)) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", `fakeException`)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
     }
@@ -184,42 +192,49 @@ class ValidatedConfigTest extends FreeSpec {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", NullValue)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[String](required("invalid-path"))) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", NullValue)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[String](required("invalid-path", "NOT_SET"))) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("invalid-path", NullValue)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[String]("test.invalid-path")) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("test.invalid-path", NullValue)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[String](required("test.invalid-path", "NOT_SET"))) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("test.invalid-path", NullValue)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[Int]("top-level-name")) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", _)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
       matchOrFail(unchecked[Int](required("top-level-name", "NOT_SET"))) {
         case Validated.Invalid(errors) => errors.toList match {
           case List(ValueFailure("top-level-name", _)) =>
             assert(true)
+          case _ => assert(false)
         }
       }
     }
@@ -256,6 +271,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.bad-path.nestedVal", _: ConfigException.Missing), ValueFailure("test.context.valueStrList", GenericTestFailure)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
         val testConfig4 = via[TestSettings]("test") { implicit config =>
@@ -272,6 +288,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.nestedRequired", _: ConfigException.BadValue), ValueFailure("test.context.valueStrList", GenericTestFailure)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
         val testConfig5 = via[TestSettings]("test") { implicit config =>
@@ -288,6 +305,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.nestedRequired", RequiredValueNotSet), ValueFailure("test.context.valueStrList", GenericTestFailure)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
       }
@@ -321,6 +339,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.bad-path.nestedVal", NullValue)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
         val testConfig4 = via[TestSettings]("test") { implicit config =>
@@ -337,6 +356,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.nestedRequired", _: ConfigException.BadValue)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
         val testConfig5 = via[TestSettings]("test") { implicit config =>
@@ -353,6 +373,7 @@ class ValidatedConfigTest extends FreeSpec {
           case Validated.Invalid(errors) => errors.toList match {
             case List(ValueFailure("test.nestedRequired", RequiredValueNotSet)) =>
               assert(true)
+            case _ => assert(false)
           }
         }
       }
@@ -378,6 +399,7 @@ class ValidatedConfigTest extends FreeSpec {
       matchOrFail(validatedConfig) {
         case Validated.Invalid(FileNotFound("non-existent.conf", _)) =>
           assert(true)
+        case _ => assert(false)
       }
     }
 
@@ -399,6 +421,7 @@ class ValidatedConfigTest extends FreeSpec {
       matchOrFail(validatedConfig) {
         case Validated.Invalid(FileNotFound(_, _: ConfigException)) =>
           assert(true)
+        case _ => assert(false)
       }
     }
 
@@ -434,6 +457,7 @@ class ValidatedConfigTest extends FreeSpec {
       matchOrFail(validatedConfig) {
         case Validated.Invalid(ValueErrors(ValueFailure("http.heartbeat", RequiredValueNotSet))) =>
           assert(true)
+        case _ => assert(false)
       }
     }
 
