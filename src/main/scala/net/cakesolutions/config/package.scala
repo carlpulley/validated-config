@@ -2,7 +2,6 @@
 
 package net.cakesolutions
 
-import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 import cats.data.{NonEmptyList => NEL, Validated}
@@ -66,10 +65,8 @@ package object config extends FicusInstances {
   implicit def toRefinementType[Base, Refinement](
     implicit reader: ValueReader[Base],
     witness: Validate[Base, Refinement]
-  ): ValueReader[Base Refined Refinement] = new ValueReader[Base Refined Refinement] {
-    override def read(config: Config, path: String): Base Refined Refinement = {
-      refineV[Refinement](config.as[Base](path)).right.get
-    }
+  ): ValueReader[Base Refined Refinement] = (config: Config, path: String) => {
+    refineV[Refinement](config.as[Base](path)).toOption.get
   }
 
   /**
